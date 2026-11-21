@@ -64,8 +64,16 @@ def synthwave(W, H, darken=0.55, sun=True):
             gap += max(1, int(3 * s))
         glow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         gd = ImageDraw.Draw(glow)
-        gd.ellipse((cx - R - 60 * s, cy - R - 60 * s, cx + R + 60 * s, cy + R + 60 * s),
-                   fill=(255, 70, 160, 90))
+        gd.ellipse(
+            (cx - R - 60 * s,
+             cy - R - 60 * s,
+             cx + R + 60 * s,
+             cy + R + 60 * s),
+            fill=(
+                255,
+                70,
+                160,
+                90))
         glow = glow.filter(ImageFilter.GaussianBlur(60 * s))
         img.paste(glow, (0, 0), glow)
         img.paste(sunimg, (cx - R, cy - R), mask)
@@ -87,7 +95,8 @@ def synthwave(W, H, darken=0.55, sun=True):
     vx = W // 2
     for i in range(-24, 25):
         x_bottom = vx + i * int(170 * s)
-        g.line([(vx + i * int(10 * s), horizon), (x_bottom, H)], fill=PINK + (150,), width=max(1, int(2 * s)))
+        g.line([(vx + i * int(10 * s), horizon), (x_bottom, H)],
+               fill=PINK + (150,), width=max(1, int(2 * s)))
     k = 0.0
     while True:
         k += 1
@@ -100,7 +109,8 @@ def synthwave(W, H, darken=0.55, sun=True):
     img.paste(grid, (0, 0), grid)
     # horizon glow line
     d = ImageDraw.Draw(img, 'RGBA')
-    d.line([(0, horizon), (W, horizon)], fill=(255, 140, 220, 255), width=max(1, int(3 * s)))
+    d.line([(0, horizon), (W, horizon)], fill=(
+        255, 140, 220, 255), width=max(1, int(3 * s)))
     # darken for readability
     dark = Image.new('RGB', (W, H), (6, 2, 14))
     return Image.blend(img, dark, darken)
@@ -109,7 +119,8 @@ def synthwave(W, H, darken=0.55, sun=True):
 def rounded_panel(w, h, r, fill, border=None, bw=2):
     img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle((0, 0, w - 1, h - 1), r, fill=fill, outline=border, width=bw if border else 0)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), r, fill=fill,
+                        outline=border, width=bw if border else 0)
     return img
 
 
@@ -146,7 +157,8 @@ def icon_radio(n):
     d = ImageDraw.Draw(img)
     c = S // 2
     w = max(4, S // 14)
-    d.ellipse((c - S * 0.09, c - S * 0.09, c + S * 0.09, c + S * 0.09), fill=PINK + (255,))
+    d.ellipse((c - S * 0.09, c - S * 0.09, c + S *
+              0.09, c + S * 0.09), fill=PINK + (255,))
     for r in (0.24, 0.40):
         box = (c - S * r, c - S * r, c + S * r, c + S * r)
         d.arc(box, 135, 225, fill=(190, 160, 240, 255), width=w)
@@ -162,8 +174,8 @@ def icon_play(n):
     heights = [0.55, 0.9, 0.4, 0.75]
     for i, hgt in enumerate(heights):
         x = int(S * 0.12) + i * int(bw * 1.45)
-        d.rounded_rectangle((x, S * (0.9 - hgt * 0.8), x + bw, S * 0.9), bw // 3,
-                            fill=lerp(PINK, CYAN, i / 3.0) + (255,))
+        d.rounded_rectangle((x, S * (0.9 - hgt * 0.8), x + bw, S * 0.9),
+                            bw // 3, fill=lerp(PINK, CYAN, i / 3.0) + (255,))
     return img.resize((n, n), Image.LANCZOS)
 
 
@@ -180,23 +192,38 @@ def title_logo(w, h, s):
     img.alpha_composite(glow)
     # chrome gradient text
     mask = Image.new('L', (w, h), 0)
-    ImageDraw.Draw(mask).text((int(8 * s), int(2 * s)), text, font=font, fill=255)
-    grad = vgradient(w, h, [(0, (255, 240, 255)), (0.45, (255, 170, 230)), (0.5, (255, 79, 176)), (1, (160, 60, 255))])
+    ImageDraw.Draw(mask).text(
+        (int(8 * s), int(2 * s)), text, font=font, fill=255)
+    grad = vgradient(w, h, [(0, (255, 240, 255)), (0.45, (255,
+                     170, 230)), (0.5, (255, 79, 176)), (1, (160, 60, 255))])
     img.paste(grad, (0, 0), mask)
     d = ImageDraw.Draw(img)
-    d.text((int(12 * s), int(76 * s)), 'W E B   R A D I O   ·   S I N C E   1 9 8 0', font=small, fill=CYAN + (230,))
+    d.text((int(12 * s),
+            int(76 * s)),
+           'W E B   R A D I O   ·   S I N C E   1 9 8 0',
+           font=small,
+           fill=CYAN + (230,
+                        ))
     return img
 
 
 def shadow(w, h, pad, s):
     img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle((pad, pad + int(10 * s), w - pad, h - pad + int(10 * s)), int(20 * s), fill=(0, 0, 0, 200))
+    d.rounded_rectangle((pad, pad + int(10 * s), w - pad, h -
+                        pad + int(10 * s)), int(20 * s), fill=(0, 0, 0, 200))
     img = img.filter(ImageFilter.GaussianBlur(pad / 2.5))
     d = ImageDraw.Draw(img)
     # neon rim
-    d.rounded_rectangle((pad - 3 * s, pad - 3 * s, w - pad + 3 * s, h - pad + 3 * s), int(18 * s),
-                        outline=PINK + (170,), width=max(2, int(3 * s)))
+    d.rounded_rectangle((pad - 3 * s,
+                         pad - 3 * s,
+                         w - pad + 3 * s,
+                         h - pad + 3 * s),
+                        int(18 * s),
+                        outline=PINK + (170,
+                                        ),
+                        width=max(2,
+                                  int(3 * s)))
     return img
 
 
@@ -223,11 +250,13 @@ def button(color, n):
 
 
 def pill(w, h, s, text):
-    img = rounded_panel(w, h, h // 2, (255, 255, 255, 40), (255, 255, 255, 120), max(1, int(2 * s)))
+    img = rounded_panel(w, h, h // 2, (255, 255, 255, 40),
+                        (255, 255, 255, 120), max(1, int(2 * s)))
     d = ImageDraw.Draw(img)
     font = ImageFont.truetype(BOLD, int(19 * s))
     tw = d.textlength(text, font=font)
-    d.text(((w - tw) / 2, (h - 19 * s) / 2 - 2 * s), text, font=font, fill=(255, 255, 255, 230))
+    d.text(((w - tw) / 2, (h - 19 * s) / 2 - 2 * s),
+           text, font=font, fill=(255, 255, 255, 230))
     return img
 
 
@@ -242,19 +271,24 @@ def icon_genre(n, top):
     d.ellipse((S * 0.55, S * 0.52, S * 0.85, S * 0.76), fill=col)
     d.rectangle((S * 0.36, S * 0.18, S * 0.36 + w, S * 0.74), fill=col)
     d.rectangle((S * 0.79, S * 0.08, S * 0.79 + w, S * 0.64), fill=col)
-    d.polygon([(S * 0.36, S * 0.18), (S * 0.79 + w, S * 0.08), (S * 0.79 + w, S * 0.22), (S * 0.36, S * 0.32)], fill=col)
+    d.polygon([(S * 0.36, S * 0.18), (S * 0.79 + w, S * 0.08),
+              (S * 0.79 + w, S * 0.22), (S * 0.36, S * 0.32)], fill=col)
     return img.resize((n, n), Image.LANCZOS)
 
 
 def qr_card(url, n):
     import qrcode
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=2, box_size=10)
+    qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        border=2,
+        box_size=10)
     qr.add_data(url)
     qr.make(fit=True)
     code = qr.make_image(fill_color='black', back_color='white').convert('RGB')
     card = Image.new('RGBA', (n, n), (0, 0, 0, 0))
     mask = Image.new('L', (n, n), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, n - 1, n - 1), n // 14, fill=255)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        (0, 0, n - 1, n - 1), n // 14, fill=255)
     white = Image.new('RGBA', (n, n), (255, 255, 255, 255))
     card.paste(white, (0, 0), mask)
     inner = int(n * 0.90)
@@ -270,12 +304,29 @@ def build(res, outdir):
     def S(v):
         return int(round(v * s))
     synthwave(W, H, 0.42).save(outdir + '/bg_main.jpg', quality=90)
-    synthwave(W, H, 0.70, sun=False).filter(ImageFilter.GaussianBlur(S(6))).save(outdir + '/bg_player.jpg', quality=90)
-    rounded_panel(S(560), S(840), S(26), (12, 4, 28, 200), PINK + (110,), max(1, S(2))).save(outdir + '/panel_left.png')
-    rounded_panel(S(1180), S(840), S(26), (12, 4, 28, 200), PINK + (110,), max(1, S(2))).save(outdir + '/panel_right.png')
-    hgradient_bar(S(1120), S(86), (255, 79, 176), (124, 58, 237), S(16), 215).save(outdir + '/sel.png')
-    hgradient_bar(S(1040), S(10), (255, 79, 176), (255, 190, 80), S(5)).save(outdir + '/progress.png')
-    rounded_panel(S(1040), S(10), S(5), (255, 255, 255, 50)).save(outdir + '/progress_bg.png')
+    synthwave(
+        W,
+        H,
+        0.70,
+        sun=False).filter(
+        ImageFilter.GaussianBlur(
+            S(6))).save(
+                outdir +
+                '/bg_player.jpg',
+        quality=90)
+    rounded_panel(S(560), S(840), S(26), (12, 4, 28, 200), PINK +
+                  (110,), max(1, S(2))).save(outdir + '/panel_left.png')
+    rounded_panel(S(1180), S(840), S(26), (12, 4, 28, 200), PINK +
+                  (110,), max(1, S(2))).save(outdir + '/panel_right.png')
+    hgradient_bar(
+        S(1120), S(86), (255, 79, 176), (124, 58, 237), S(16), 215).save(
+        outdir + '/sel.png')
+    hgradient_bar(
+        S(1040), S(10), (255, 79, 176), (255, 190, 80), S(5)).save(
+        outdir + '/progress.png')
+    rounded_panel(
+        S(1040), S(10), S(5), (255, 255, 255, 50)).save(
+        outdir + '/progress_bg.png')
     icon_star(S(44)).save(outdir + '/ic_fav.png')
     icon_radio(S(44)).save(outdir + '/ic_radio.png')
     icon_play(S(44)).save(outdir + '/ic_play.png')
@@ -291,9 +342,15 @@ def build(res, outdir):
     pill(S(90), S(34), s, '0').save(outdir + '/btn_0.png')
     icon_genre(S(44), False).save(outdir + '/ic_genre.png')
     icon_genre(S(44), True).save(outdir + '/ic_genre_top.png')
-    rounded_panel(S(1100), S(840), S(26), (12, 4, 28, 200), PINK + (110,), max(1, S(2))).save(outdir + '/panel_about.png')
-    rounded_panel(S(660), S(840), S(26), (12, 4, 28, 210), CYAN + (110,), max(1, S(2))).save(outdir + '/panel_qr.png')
-    qr_card('https://www.paypal.com/paypalme/belfagor2005', S(290)).save(outdir + '/qr_paypal.png')
+    rounded_panel(S(1100), S(840), S(26), (12, 4, 28, 200), PINK +
+                  (110,), max(1, S(2))).save(outdir + '/panel_about.png')
+    rounded_panel(S(660), S(840), S(26), (12, 4, 28, 210), CYAN +
+                  (110,), max(1, S(2))).save(outdir + '/panel_qr.png')
+    qr_card(
+        'https://www.paypal.com/paypalme/belfagor2005',
+        S(290)).save(
+        outdir +
+        '/qr_paypal.png')
     qr_card('https://ko-fi.com/lululla', S(290)).save(outdir + '/qr_kofi.png')
     pill(S(90), S(34), s, '◀ ▶').save(outdir + '/btn_lr.png')
 

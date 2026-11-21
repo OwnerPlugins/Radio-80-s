@@ -66,9 +66,27 @@ HEADERS = {
 }
 
 # "Top-Genres" as shown on laut.fm/genres
-TOP_GENRES = ['Pop', 'Rock', 'Charts', 'Schlager', '80er', '90er', 'Oldies', 'Rap',
-              'Hip-Hop', 'Dance & Electronic', 'Techno', 'House', 'Dance',
-              'Alternative', 'Hits', 'Metal', '70er', '00er', 'EDM', 'Disco']
+TOP_GENRES = [
+    'Pop',
+    'Rock',
+    'Charts',
+    'Schlager',
+    '80er',
+    '90er',
+    'Oldies',
+    'Rap',
+    'Hip-Hop',
+    'Dance & Electronic',
+    'Techno',
+    'House',
+    'Dance',
+    'Alternative',
+    'Hits',
+    'Metal',
+    '70er',
+    '00er',
+    'EDM',
+    'Disco']
 
 
 def q(text):
@@ -109,8 +127,10 @@ def log(msg):
 def reset_log():
     try:
         with codecs.open(LOG_FILE, 'w', encoding='utf-8') as f:
-            f.write('RadioM %s - python %s - requests %s\n' % (
-                __version__, sys.version.split()[0], getattr(requests, '__version__', '?')))
+            f.write(
+                'RadioM %s - python %s - requests %s\n' %
+                (__version__, sys.version.split()[0], getattr(
+                    requests, '__version__', '?')))
     except Exception:
         pass
 
@@ -144,13 +164,23 @@ def http_get(url, timeout=10, stream=False, headers=None):
     headers = headers or HEADERS
     get = session().get
     try:
-        r = get(url, headers=headers, timeout=timeout, stream=stream, verify=_verify[0])
+        r = get(
+            url,
+            headers=headers,
+            timeout=timeout,
+            stream=stream,
+            verify=_verify[0])
     except requests.exceptions.SSLError as e:
         if not _verify[0]:
             raise
         log('SSL error, retrying without certificate check: %s' % e)
         _verify[0] = False
-        r = get(url, headers=headers, timeout=timeout, stream=stream, verify=False)
+        r = get(
+            url,
+            headers=headers,
+            timeout=timeout,
+            stream=stream,
+            verify=False)
     r.raise_for_status()
     return r
 
@@ -164,7 +194,8 @@ def http_json(url, timeout=10):
 
 
 def http_file(url, target, timeout=15):
-    r = http_get(url, timeout, stream=True, headers={'User-Agent': HEADERS['User-Agent']})
+    r = http_get(url, timeout, stream=True, headers={
+                 'User-Agent': HEADERS['User-Agent']})
     r.raise_for_status()
     tmp = target + '.part'
     with open(tmp, 'wb') as f:
@@ -216,12 +247,19 @@ def slim_station(st):
         'url': st.get('stream_url') or 'https://stream.laut.fm/%s' % name,
         'logo': images.get('station_640x640') or images.get('station_120x120') or images.get('station') or '',
         'genres': st.get('genres') or [],
-        'format': (st.get('format') or '').strip(),
-        'desc': (st.get('description') or '').strip()[:300],
-        'location': (st.get('location') or '').strip(),
-        'djs': (st.get('djs') or '').strip(),
-        'lat': num(st.get('lat')),
-        'lng': num(st.get('lng')),
+        'format': (
+            st.get('format') or '').strip(),
+        'desc': (
+            st.get('description') or '').strip()[
+                :300],
+        'location': (
+            st.get('location') or '').strip(),
+        'djs': (
+            st.get('djs') or '').strip(),
+        'lat': num(
+            st.get('lat')),
+        'lng': num(
+            st.get('lng')),
         'listeners': 0,
         'src': 'laut',
     }
@@ -235,7 +273,13 @@ def collect_stations(obj, out=None):
     if out is None:
         out = []
     if isinstance(obj, dict):
-        if obj.get('name') and any(k in obj for k in ('stream_url', 'display_name', 'api_urls', 'page_url', 'images')):
+        if obj.get('name') and any(
+            k in obj for k in (
+                'stream_url',
+                'display_name',
+                'api_urls',
+                'page_url',
+                'images')):
             out.append(obj)
             return out
         for v in obj.values():
@@ -342,12 +386,20 @@ def fetch_all_stations(per_page=100, max_pages=120, progress=None):
     b, m, limit, extra = chosen
 
     def fetch_page(page):
-        url = make_url(b, m, limit, extra, page * limit if m == 'offset' else page + 1)
+        url = make_url(
+            b,
+            m,
+            limit,
+            extra,
+            page *
+            limit if m == 'offset' else page +
+            1)
         for attempt in (1, 2):
             try:
                 return collect_stations(http_json(url, timeout=20))
             except Exception as e:
-                log('%s -> %s %r (attempt %d)' % (url, short_error(e), e, attempt))
+                log('%s -> %s %r (attempt %d)' %
+                    (url, short_error(e), e, attempt))
         return None
 
     # page 1 alone: tells whether the server honours "offset"
@@ -369,8 +421,14 @@ def fetch_all_stations(per_page=100, max_pages=120, progress=None):
         pool = None     # python 2: one page at a time
     page = 2
     while page < max_pages:
-        batch = list(range(page, min(page + (PARALLEL_PAGES if pool else 1), max_pages)))
-        results = list(pool.map(fetch_page, batch)) if pool else [fetch_page(batch[0])]
+        batch = list(
+            range(page, min(page + (PARALLEL_PAGES if pool else 1), max_pages)))
+        results = list(
+            pool.map(
+                fetch_page,
+                batch)) if pool else [
+            fetch_page(
+                batch[0])]
         done = False
         for items in results:
             if items is None:
@@ -406,12 +464,22 @@ def merge_known(found, known_by_id):
 def search_stations(query, known_by_id, limit=100):
     """Server side search (station names, descriptions, artists played...)."""
     url = '%s/search/stations?query=%s&limit=%d' % (BASE[0], q(query), limit)
-    return merge_known(collect_stations(http_json(url, timeout=15)), known_by_id)
+    return merge_known(
+        collect_stations(
+            http_json(
+                url,
+                timeout=15)),
+        known_by_id)
 
 
 def stations_by_genre(genre, known_by_id, limit=200):
     url = '%s/stations/genre/%s?limit=%d' % (BASE[0], q(genre), limit)
-    recs = merge_known(collect_stations(http_json(url, timeout=15)), known_by_id)
+    recs = merge_known(
+        collect_stations(
+            http_json(
+                url,
+                timeout=15)),
+        known_by_id)
     recs.sort(key=lambda r: (-r['listeners'], r['title'].lower()))
     return recs
 
@@ -437,8 +505,13 @@ def save_cache(stations, ts=None, lts=None):
     ensure_dir(os.path.dirname(path))
     now = time()
     try:
-        raw = json.dumps({'v': CACHE_VERSION, 'ts': ts or now, 'lts': lts or now,
-                          'stations': stations}, ensure_ascii=False, separators=(',', ':'))
+        raw = json.dumps({'v': CACHE_VERSION,
+                          'ts': ts or now,
+                          'lts': lts or now,
+                          'stations': stations},
+                         ensure_ascii=False,
+                         separators=(',',
+                                     ':'))
         tmp = path + '.tmp'
         with gzip.open(tmp, 'wb') as f:
             f.write(raw.encode('utf-8'))
@@ -458,11 +531,20 @@ def read_txt_playlist(folder, filename):
                     continue
                 name, url = line.split('###', 1)
                 if name and url:
-                    out.append({'id': '', 'title': name.strip(), 'url': url.strip(),
-                                'logo': '', 'genres': [], 'format': '',
-                                'desc': filename.replace('.txt', ''),
-                                'location': '', 'djs': '', 'lat': None, 'lng': None,
-                                'listeners': 0, 'src': 'custom'})
+                    out.append({'id': '',
+                                'title': name.strip(),
+                                'url': url.strip(),
+                                'logo': '',
+                                'genres': [],
+                                'format': '',
+                                'desc': filename.replace('.txt',
+                                                         ''),
+                                'location': '',
+                                'djs': '',
+                                'lat': None,
+                                'lng': None,
+                                'listeners': 0,
+                                'src': 'custom'})
     except Exception as e:
         print('[RadioM] playlist error: %s' % e)
     return out
@@ -487,8 +569,8 @@ def get_location():
 
 def distance_km(lat1, lng1, lat2, lng2):
     p = math.pi / 180.0
-    a = (0.5 - math.cos((lat2 - lat1) * p) / 2 +
-         math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lng2 - lng1) * p)) / 2)
+    a = (0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p)
+         * math.cos(lat2 * p) * (1 - math.cos((lng2 - lng1) * p)) / 2)
     return 12742 * math.asin(math.sqrt(max(0.0, a)))
 
 
@@ -599,7 +681,8 @@ def make_backdrop(cover):
             w, h = img.size
             crop_h = int(w * 9 / 16.0)
             top = max(0, (h - crop_h) // 2)
-            img = img.crop((0, top, w, min(h, top + crop_h))).resize((320, 180))
+            img = img.crop((0, top, w, min(h, top + crop_h))
+                           ).resize((320, 180))
             img = img.filter(ImageFilter.GaussianBlur(9))
             img = ImageEnhance.Brightness(img).enhance(0.42)
             img.save(target, 'JPEG', quality=85)
@@ -613,7 +696,10 @@ def fetch_cover(artist, title, fallback_logo):
     """iTunes artwork -> (cover_path, backdrop_path)."""
     ensure_dir(join(CACHE_DIR, 'covers'))
     cover = None
-    query = ('%s %s' % (artist, sub(r'\([^)]*\)|\[[^\]]*\]', '', title))).strip()
+    query = (
+        '%s %s' %
+        (artist, sub(
+            r'\([^)]*\)|\[[^\]]*\]', '', title))).strip()
     if query:
         target = join(CACHE_DIR, 'covers', md5(query.lower()) + '.jpg')
         if exists(target) and getsize(target) > 2048:
@@ -621,12 +707,17 @@ def fetch_cover(artist, title, fallback_logo):
         else:
             for entity in ('song', 'album'):
                 try:
-                    url = 'https://itunes.apple.com/search?term=%s&entity=%s&limit=1' % (q(query), entity)
+                    url = 'https://itunes.apple.com/search?term=%s&entity=%s&limit=1' % (
+                        q(query), entity)
                     data = http_json(url)
                     if data.get('resultCount', 0):
                         art = data['results'][0].get('artworkUrl100', '')
                         if art:
-                            http_file(art.replace('100x100bb', '600x600bb'), target)
+                            http_file(
+                                art.replace(
+                                    '100x100bb',
+                                    '600x600bb'),
+                                target)
                             cover = normalise_jpeg(target)
                             break
                 except Exception as e:

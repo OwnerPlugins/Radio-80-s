@@ -148,8 +148,13 @@ def clean_rec(rec):
 
 class Settings(object):
     def __init__(self):
-        self.data = {'favourites': [], 'recent': [], 'player': '4097',
-                     'last_search': '', 'update_mode': 'notify', 'location': None}
+        self.data = {
+            'favourites': [],
+            'recent': [],
+            'player': '4097',
+            'last_search': '',
+            'update_mode': 'notify',
+            'location': None}
         try:
             with codecs.open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
                 self.data.update(json.load(f))
@@ -181,7 +186,10 @@ class Settings(object):
 
     def add_recent(self, rec):
         key = station_key(rec)
-        recent = [r for r in self.data.get('recent', []) if station_key(r) != key]
+        recent = [
+            r for r in self.data.get(
+                'recent',
+                []) if station_key(r) != key]
         recent.insert(0, clean_rec(rec))
         self.data['recent'] = recent[:25]
         self.save()
@@ -301,7 +309,14 @@ class ImageWidget(object):
             return
         self.current = path
         size = inst.size()
-        self.loader.setPara((size.width(), size.height(), sc[0], sc[1], False, 1, '#00000000'))
+        self.loader.setPara(
+            (size.width(),
+             size.height(),
+             sc[0],
+                sc[1],
+                False,
+                1,
+                '#00000000'))
         self.loader.startDecode(path)
 
     def _done(self, info=None):
@@ -321,8 +336,18 @@ class StationList(MenuList):
         self.l.setFont(0, gFont('Regular', S(34)))
         self.l.setFont(1, gFont('Regular', S(25)))
         self.l.setFont(2, gFont('Regular', S(21)))
-        self.icons = dict((k, loadPNG(join(skin_path, 'ic_%s.png' % k)))
-                          for k in ('fav', 'radio', 'play', 'genre', 'genre_top'))
+        self.icons = dict(
+            (k,
+             loadPNG(
+                 join(
+                     skin_path,
+                     'ic_%s.png' %
+                     k))) for k in (
+                'fav',
+                'radio',
+                'play',
+                'genre',
+                'genre_top'))
         self.width = S(1120)
 
     def _row(self, rec, icon, title, subtitle, big='', small=''):
@@ -368,19 +393,30 @@ class StationList(MenuList):
         big = small = ''
         if rec.get('src') == 'laut':
             big, small = str(rec.get('listeners', 0)), _('listeners')
-        return self._row(rec, icon, rec['title'], '  ·  '.join(parts), big, small)
+        return self._row(
+            rec,
+            icon,
+            rec['title'],
+            '  ·  '.join(parts),
+            big,
+            small)
 
     def build_genre(self, rec):
-        icon = self.icons['genre_top'] if rec.get('top') else self.icons['genre']
-        sub = _('Top genre on laut.fm') if rec.get('top') else (rec.get('example') or '')
-        return self._row(rec, icon, rec['genre'], sub, str(rec['count']), _('stations'))
+        icon = self.icons['genre_top'] if rec.get(
+            'top') else self.icons['genre']
+        sub = _('Top genre on laut.fm') if rec.get(
+            'top') else (rec.get('example') or '')
+        return self._row(
+            rec, icon, rec['genre'], sub, str(
+                rec['count']), _('stations'))
 
     def fill(self, items, kind='stations'):
         if kind == 'genres':
             self.setList([self.build_genre(r) for r in items])
         else:
             favs = settings.fav_keys()
-            self.setList([self.build_station(r, station_key(r) in favs) for r in items])
+            self.setList([self.build_station(r, station_key(r) in favs)
+                         for r in items])
 
 
 # --------------------------------------------------------------------------
@@ -398,14 +434,20 @@ def start_update(session, info, status=None):
             if status:
                 status(_('RadioM %s installed') % info['version'])
             session.openWithCallback(
-                restart_gui, MessageBox,
-                _('RadioM %s has been installed.\n\nRestart the GUI now to use it?') % info['version'],
+                restart_gui,
+                MessageBox,
+                _('RadioM %s has been installed.\n\nRestart the GUI now to use it?') %
+                info['version'],
                 MessageBox.TYPE_YESNO)
         else:
             if status:
                 status(_('Update failed'))
-            session.open(MessageBox, _('Update failed:\n%s') % msg, MessageBox.TYPE_ERROR)
-    threads.deferToThread(updater.install_tarball, info['tarball']).addCallback(done)
+            session.open(
+                MessageBox, _('Update failed:\n%s') %
+                msg, MessageBox.TYPE_ERROR)
+    threads.deferToThread(
+        updater.install_tarball,
+        info['tarball']).addCallback(done)
 
 
 def restart_gui(answer):
@@ -433,7 +475,8 @@ class RadioMMain(Screen):
         self.view = []
         self.kind = 'stations'
         self.tab = 'top'
-        self.sub = None              # ('genre', name) | ('search', text) | ('file', name)
+        # ('genre', name) | ('search', text) | ('file', name)
+        self.sub = None
         self.sub_results = []
         self.genre_back_index = 0
         self.near_results = None
@@ -509,7 +552,9 @@ class RadioMMain(Screen):
         elif now - lts > L.LISTENERS_TTL:
             self.refresh_listeners()
         if settings.data.get('update_mode', 'notify') != 'off':
-            threads.deferToThread(updater.check_latest).addCallback(self._update_checked)
+            threads.deferToThread(
+                updater.check_latest).addCallback(
+                self._update_checked)
 
     def set_stations(self, stations):
         self.all_stations = stations
@@ -519,7 +564,8 @@ class RadioMMain(Screen):
         if self.loading:
             return
         self.loading = True
-        self.show_partial = not self.all_stations    # nothing cached: fill the list while loading
+        # nothing cached: fill the list while loading
+        self.show_partial = not self.all_stations
         self['status'].setText(_('Downloading station list...'))
 
         def progress(part):
@@ -549,14 +595,19 @@ class RadioMMain(Screen):
             self.apply_view(keep_selection=True)
         elif not self.all_stations:
             self.apply_view()
-            self['status'].setText(_('No stations (%s). Details in %s') % (L.LAST_ERROR or '?', L.LOG_FILE))
+            self['status'].setText(
+                _('No stations (%s). Details in %s') %
+                (L.LAST_ERROR or '?', L.LOG_FILE))
 
     def _load_error(self, failure):
         self.loading = False
         L.log('station list failed: %s' % failure.getErrorMessage())
         if self.alive:
             self.apply_view()
-            self['status'].setText(_('Network error (%s). Details in %s') % (failure.getErrorMessage()[:60], L.LOG_FILE))
+            self['status'].setText(
+                _('Network error (%s). Details in %s') %
+                (failure.getErrorMessage()[
+                    :60], L.LOG_FILE))
 
     def refresh_listeners(self):
         stations = list(self.all_stations)
@@ -568,8 +619,13 @@ class RadioMMain(Screen):
                 self.set_stations(result)
                 if self.tab == 'top' and not self.sub:
                     self.apply_view(keep_selection=True)
-        threads.deferToThread(lambda: L.apply_listeners(stations, L.fetch_listeners())).addCallback(done).addErrback(
-            lambda f: print('[RadioM] listeners: %s' % f))
+        threads.deferToThread(
+            lambda: L.apply_listeners(
+                stations,
+                L.fetch_listeners())).addCallback(done).addErrback(
+            lambda f: print(
+                '[RadioM] listeners: %s' %
+                f))
 
     # ----------------------------------------------------------------- tabs
     def set_tab(self, tab):
@@ -590,7 +646,8 @@ class RadioMMain(Screen):
 
     def update_tabs(self):
         for key, _label in TABS:
-            set_color(self['tab_' + key], COL_TAB_ACTIVE if key == self.tab else COL_TAB)
+            set_color(self['tab_' + key],
+                      COL_TAB_ACTIVE if key == self.tab else COL_TAB)
 
     # ----------------------------------------------------------------- view
     def genre_rows(self):
@@ -604,10 +661,15 @@ class RadioMMain(Screen):
         for g in L.TOP_GENRES:
             real = lower.get(g.lower(), g)
             first = example.get(real, {})
-            rows.append({'genre': real, 'count': counts.get(real, 0), 'top': True,
-                         'logo': first.get('logo', ''), 'example': first.get('title', '')})
+            rows.append(
+                {
+                    'genre': real, 'count': counts.get(
+                        real, 0), 'top': True, 'logo': first.get(
+                        'logo', ''), 'example': first.get(
+                        'title', '')})
         top_lower = set(g.lower() for g in L.TOP_GENRES)
-        rest = [(g, n) for g, n in counts.items() if g.lower() not in top_lower and n >= 2]
+        rest = [(g, n) for g, n in counts.items()
+                if g.lower() not in top_lower and n >= 2]
         rest.sort(key=lambda kv: (-kv[1], kv[0].lower()))
         for g, n in rest:
             first = example.get(g, {})
@@ -626,17 +688,20 @@ class RadioMMain(Screen):
             if not view:
                 status = _('Nothing found')
         elif self.tab == 'fav':
-            view, title = list(settings.data['favourites']), _('Your favourites')
+            view, title = list(
+                settings.data['favourites']), _('Your favourites')
             if not view:
                 status = _('No favourites yet: press YELLOW on a station')
         elif self.tab == 'recent':
-            view, title = list(settings.data.get('recent', [])), _('Recently played stations')
+            view, title = list(settings.data.get('recent', [])), _(
+                'Recently played stations')
             if not view:
                 status = _('Nothing played yet')
         elif self.tab == 'near':
             loc = settings.data.get('location') or {}
             view = self.near_results or []
-            title = _('Near %s') % loc['city'] if loc.get('city') else _('Stations near you')
+            title = _('Near %s') % loc['city'] if loc.get(
+                'city') else _('Stations near you')
             if self.near_results is None:
                 status = _('Finding your position...')
             elif not view:
@@ -651,7 +716,8 @@ class RadioMMain(Screen):
         if self.loading and not view:
             status = _('Downloading station list...')
         self.view, self.kind = view, kind
-        self['mode'].setText('%s  ·  %d' % (title, len(view)) if view else title)
+        self['mode'].setText('%s  ·  %d' %
+                             (title, len(view)) if view else title)
         self['list'].fill(view, kind)
         if current:
             key = current.get('genre') or station_key(current)
@@ -665,7 +731,8 @@ class RadioMMain(Screen):
         self.selection_changed()
 
     def update_nowplaying(self):
-        self['nowplaying'].setText('♫  ' + NowPlaying.rec['title'] if NowPlaying.rec else '')
+        self['nowplaying'].setText(
+            '♫  ' + NowPlaying.rec['title'] if NowPlaying.rec else '')
 
     def selected(self):
         idx = self['list'].getSelectionIndex()
@@ -676,37 +743,53 @@ class RadioMMain(Screen):
     def selection_changed(self):
         rec = self.selected()
         if not rec:
-            for k in ('st_name', 'st_genres', 'st_meta', 'st_desc', 'st_listeners'):
+            for k in (
+                'st_name',
+                'st_genres',
+                'st_meta',
+                'st_desc',
+                    'st_listeners'):
                 self[k].setText('')
-            self['key_green'].setText(_('Search') if self.tab == 'search' else '')
+            self['key_green'].setText(
+                _('Search') if self.tab == 'search' else '')
             self['key_yellow'].setText('')
             self.logo_timer.start(350, True)
             return
         if self.kind == 'genres':
             self['st_name'].setText(rec['genre'])
-            self['st_genres'].setText(_('Top genre') if rec.get('top') else _('Genre'))
-            self['st_meta'].setText(_('%d stations in the list') % rec['count'])
-            self['st_desc'].setText(_('Press OK to see all the stations of this genre, also the ones not in the top list.'))
+            self['st_genres'].setText(
+                _('Top genre') if rec.get('top') else _('Genre'))
+            self['st_meta'].setText(
+                _('%d stations in the list') %
+                rec['count'])
+            self['st_desc'].setText(
+                _('Press OK to see all the stations of this genre, also the ones not in the top list.'))
             self['st_listeners'].setText('')
             self['key_green'].setText(_('Open'))
             self['key_yellow'].setText('')
         else:
             self['st_name'].setText(rec['title'])
             self['st_genres'].setText(', '.join(rec.get('genres', [])))
-            meta = [x for x in (('%d km' % rec['_dist']) if rec.get('_dist') is not None else '',
-                                rec.get('location'),
-                                ('DJ ' + rec['djs']) if rec.get('djs') else '') if x]
+            meta = [
+                x for x in (
+                    ('%d km' % rec['_dist']) if rec.get('_dist') is not None else '',
+                    rec.get('location'),
+                    ('DJ ' + rec['djs']) if rec.get('djs') else '') if x]
             self['st_meta'].setText('  ·  '.join(meta))
             desc = rec.get('format') or ''
             if rec.get('desc') and rec['desc'] != desc:
                 desc = (desc + '\n' + rec['desc']).strip()
             self['st_desc'].setText(desc)
             if rec.get('src') == 'laut':
-                self['st_listeners'].setText(_('%d listening now') % rec.get('listeners', 0))
+                self['st_listeners'].setText(
+                    _('%d listening now') %
+                    rec.get(
+                        'listeners', 0))
             else:
                 self['st_listeners'].setText(_('Custom stream'))
             self['key_green'].setText(_('Play'))
-            self['key_yellow'].setText(_('Remove fav.') if settings.is_fav(rec) else _('Favourite'))
+            self['key_yellow'].setText(
+                _('Remove fav.') if settings.is_fav(rec) else _('Favourite'))
         # debounce: download the logo only when the cursor stops
         self.logo_timer.start(350, True)
 
@@ -743,7 +826,8 @@ class RadioMMain(Screen):
     def open_genre(self, genre):
         self.genre_back_index = self['list'].getSelectionIndex()
         g = genre.lower()
-        local = [r for r in self.all_stations if g in [x.lower() for x in r.get('genres', [])]]
+        local = [r for r in self.all_stations if g in [x.lower()
+                                                       for x in r.get('genres', [])]]
         self.sub, self.sub_results = ('genre', genre), local
         self['list'].moveToIndex(0)
         self.apply_view()
@@ -753,7 +837,8 @@ class RadioMMain(Screen):
             if not self.alive or self.sub != ('genre', genre):
                 return
             merged = self.merge(online, local)
-            merged.sort(key=lambda r: (-r.get('listeners', 0), r['title'].lower()))
+            merged.sort(
+                key=lambda r: (-r.get('listeners', 0), r['title'].lower()))
             self.sub_results = merged
             self.apply_view(keep_selection=True)
 
@@ -761,7 +846,10 @@ class RadioMMain(Screen):
             print('[RadioM] genre: %s' % f)
             if self.alive and self.sub == ('genre', genre):
                 self['status'].setText('' if local else _('Nothing found'))
-        threads.deferToThread(L.stations_by_genre, genre, self.by_id).addCallback(done).addErrback(fail)
+        threads.deferToThread(
+            L.stations_by_genre,
+            genre,
+            self.by_id).addCallback(done).addErrback(fail)
 
     def merge(self, first, second):
         out, seen = [], set()
@@ -787,10 +875,32 @@ class RadioMMain(Screen):
         settings.data['last_search'] = text
         settings.save()
         ql = text.lower()
-        local = [r for r in self.all_stations if ql in (
-            r['title'] + ' ' + r['id'] + ' ' + ' '.join(r.get('genres', [])) + ' ' +
-            r.get('format', '') + ' ' + r.get('desc', '') + ' ' + r.get('location', '') + ' ' +
-            r.get('djs', '')).lower()]
+        local = [
+            r for r in self.all_stations if ql in (
+                r['title'] +
+                ' ' +
+                r['id'] +
+                ' ' +
+                ' '.join(
+                    r.get(
+                        'genres',
+                        [])) +
+                ' ' +
+                r.get(
+                    'format',
+                    '') +
+                ' ' +
+                r.get(
+                    'desc',
+                    '') +
+                ' ' +
+                r.get(
+                    'location',
+                    '') +
+                ' ' +
+                r.get(
+                    'djs',
+                    '')).lower()]
         self.tab = 'search'
         self.sub, self.sub_results = ('search', text), local
         self['list'].moveToIndex(0)
@@ -806,8 +916,12 @@ class RadioMMain(Screen):
         def fail(f):
             print('[RadioM] search: %s' % f)
             if self.alive and self.sub == ('search', text):
-                self['status'].setText(_('Online search not available, local results only') if local else _('Nothing found'))
-        threads.deferToThread(L.search_stations, text, self.by_id).addCallback(done).addErrback(fail)
+                self['status'].setText(
+                    _('Online search not available, local results only') if local else _('Nothing found'))
+        threads.deferToThread(
+            L.search_stations,
+            text,
+            self.by_id).addCallback(done).addErrback(fail)
 
     def load_near(self, refresh=False):
         stations = list(self.all_stations)
@@ -848,7 +962,8 @@ class RadioMMain(Screen):
             self.session.open(Playstream2, rec['title'], rec['url'])
             return
         idx = self['list'].getSelectionIndex()
-        self.session.openWithCallback(self.player_closed, RadioMPlayer, self.view, idx)
+        self.session.openWithCallback(
+            self.player_closed, RadioMPlayer, self.view, idx)
 
     def player_closed(self, index=None):
         if self.tab == 'recent' and not self.sub:
@@ -871,7 +986,8 @@ class RadioMMain(Screen):
             self['list'].fill(self.view, self.kind)
             self['list'].moveToIndex(idx)
             self.selection_changed()
-        self['status'].setText(_('Added to favourites') if added else _('Removed from favourites'))
+        self['status'].setText(_('Added to favourites')
+                               if added else _('Removed from favourites'))
 
     def show_details(self):
         if time() - self.last_info < 1:
@@ -881,8 +997,13 @@ class RadioMMain(Screen):
         if not rec:
             return
         if self.kind == 'genres':
-            self.session.open(MessageBox, '%s\n\n%s' % (rec['genre'], _('%d stations in the list') % rec['count']),
-                              MessageBox.TYPE_INFO)
+            self.session.open(
+                MessageBox,
+                '%s\n\n%s' %
+                (rec['genre'],
+                 _('%d stations in the list') %
+                    rec['count']),
+                MessageBox.TYPE_INFO)
             return
         lines = [rec['title'], '']
         for label, key in ((_('Genres'), 'genres'), (_('Format'), 'format'),
@@ -894,7 +1015,12 @@ class RadioMMain(Screen):
             if val:
                 lines.append('%s: %s' % (label, val))
         if rec.get('src') == 'laut':
-            lines.append('%s: %d' % (_('Listeners now'), rec.get('listeners', 0)))
+            lines.append(
+                '%s: %d' %
+                (_('Listeners now'),
+                 rec.get(
+                    'listeners',
+                    0)))
             lines.append('%s: https://laut.fm/%s' % (_('Page'), rec['id']))
         lines.append('%s: %s' % (_('Stream'), rec['url']))
         self.session.open(MessageBox, '\n'.join(lines), MessageBox.TYPE_INFO)
@@ -912,8 +1038,14 @@ class RadioMMain(Screen):
         if NowPlaying.rec:
             menu.insert(0, (_('Stop playback'), 'stop'))
         if self.update_info and updater.is_newer(self.update_info['version']):
-            menu.insert(0, (_('Install update %s') % self.update_info['version'], 'update'))
-        self.session.openWithCallback(self.menu_done, ChoiceBox, title=_('RadioM menu'), list=menu)
+            menu.insert(
+                0, (_('Install update %s') %
+                    self.update_info['version'], 'update'))
+        self.session.openWithCallback(
+            self.menu_done,
+            ChoiceBox,
+            title=_('RadioM menu'),
+            list=menu)
 
     def menu_done(self, choice):
         if not choice:
@@ -924,9 +1056,12 @@ class RadioMMain(Screen):
         elif action == 'genres':
             self.set_tab('genres')
         elif action == 'files':
-            files = sorted(f for f in listdir(PLAYLISTS) if f.endswith('.txt')) if exists(PLAYLISTS) else []
+            files = sorted(f for f in listdir(PLAYLISTS) if f.endswith(
+                '.txt')) if exists(PLAYLISTS) else []
             if not files:
-                self.session.open(MessageBox, _('No .txt playlist in %s') % PLAYLISTS, MessageBox.TYPE_INFO, timeout=5)
+                self.session.open(
+                    MessageBox, _('No .txt playlist in %s') %
+                    PLAYLISTS, MessageBox.TYPE_INFO, timeout=5)
                 return
             self.session.openWithCallback(
                 self.file_done, ChoiceBox, title=_('Local playlists'),
@@ -938,7 +1073,8 @@ class RadioMMain(Screen):
         elif action == 'player':
             keys = [p[0] for p in PLAYERS]
             cur = settings.data.get('player', '4097')
-            nxt = keys[(keys.index(cur) + 1) % len(keys)] if cur in keys else keys[0]
+            nxt = keys[(keys.index(cur) + 1) %
+                       len(keys)] if cur in keys else keys[0]
             settings.data['player'] = nxt
             settings.save()
             self['status'].setText(_('Player: %s') % dict(PLAYERS)[nxt])
@@ -950,7 +1086,10 @@ class RadioMMain(Screen):
         elif action == 'about':
             self.open_about()
         elif action == 'update':
-            start_update(self.session, self.update_info, self['status'].setText)
+            start_update(
+                self.session,
+                self.update_info,
+                self['status'].setText)
 
     def file_done(self, choice):
         if choice:
@@ -989,12 +1128,21 @@ class RadioMMain(Screen):
         if settings.data.get('update_mode') == 'auto':
             start_update(self.session, info, self['status'].setText)
             return
-        self['status'].setText(_('Update %s available: MENU to install') % info['version'])
+        self['status'].setText(
+            _('Update %s available: MENU to install') %
+            info['version'])
         self.session.openWithCallback(
-            lambda yes: yes and start_update(self.session, info, self['status'].setText),
+            lambda yes: yes and start_update(
+                self.session,
+                info,
+                self['status'].setText),
             MessageBox,
-            _('RadioM %s is available on GitHub.\n\n%s\n\nInstall it now?') % (info['version'], info['changelog']),
-            MessageBox.TYPE_YESNO, timeout=20, default=False)
+            _('RadioM %s is available on GitHub.\n\n%s\n\nInstall it now?') %
+            (info['version'],
+             info['changelog']),
+            MessageBox.TYPE_YESNO,
+            timeout=20,
+            default=False)
 
 
 # --------------------------------------------------------------------------
@@ -1022,8 +1170,10 @@ class RadioMAbout(Screen):
               'recently played songs and sleep timer.'))
         self['repo'] = Label('github.com/' + updater.GITHUB_REPO)
         self['updmode'] = Label('')
-        self['donate'] = Label(_('Do you like RadioM? Offer a coffee to the developer!'))
-        self['keys_hint'] = Label(_('Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  \u00b7  0: this screen'))
+        self['donate'] = Label(
+            _('Do you like RadioM? Offer a coffee to the developer!'))
+        self['keys_hint'] = Label(
+            _('Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  \u00b7  0: this screen'))
         self['scan'] = Label(_('Scan the code with your phone camera'))
         self['thanks'] = Label('\u2665  ' + _('Thank you!'))
         self['qr1_label'] = Label('PayPal')
@@ -1046,8 +1196,12 @@ class RadioMAbout(Screen):
             self.check()
 
     def show_mode(self):
-        self['updmode'].setText(_('Automatic updates: %s') % dict(UPDATE_MODES).get(
-            settings.data.get('update_mode', 'notify')))
+        self['updmode'].setText(
+            _('Automatic updates: %s') %
+            dict(UPDATE_MODES).get(
+                settings.data.get(
+                    'update_mode',
+                    'notify')))
 
     def show_info(self):
         info = self.info
@@ -1056,10 +1210,14 @@ class RadioMAbout(Screen):
             return
         when = (' (%s)' % info['date']) if info.get('date') else ''
         if updater.is_newer(info['version']):
-            self['latest'].setText(_('New version %s available%s: press GREEN') % (info['version'], when))
+            self['latest'].setText(
+                _('New version %s available%s: press GREEN') %
+                (info['version'], when))
             self['key_green'].setText(_('Install %s') % info['version'])
         else:
-            self['latest'].setText(_('Up to date: latest release is %s%s') % (info['version'], when))
+            self['latest'].setText(
+                _('Up to date: latest release is %s%s') %
+                (info['version'], when))
             self['key_green'].setText(_('Check update'))
 
     def check(self):
@@ -1077,14 +1235,19 @@ class RadioMAbout(Screen):
     def cycle_mode(self):
         keys = [m[0] for m in UPDATE_MODES]
         cur = settings.data.get('update_mode', 'notify')
-        settings.data['update_mode'] = keys[(keys.index(cur) + 1) % len(keys)] if cur in keys else 'notify'
+        settings.data['update_mode'] = keys[(keys.index(
+            cur) + 1) % len(keys)] if cur in keys else 'notify'
         settings.save()
         self.show_mode()
 
     def changelog(self):
         if self.info and self.info.get('changelog'):
-            self.session.open(MessageBox, _('RadioM %s\n\n%s') % (self.info['version'], self.info['changelog']),
-                              MessageBox.TYPE_INFO)
+            self.session.open(
+                MessageBox,
+                _('RadioM %s\n\n%s') %
+                (self.info['version'],
+                 self.info['changelog']),
+                MessageBox.TYPE_INFO)
 
     def close_screen(self):
         self.alive = False
@@ -1179,7 +1342,12 @@ class RadioMPlayer(Screen):
         self.song_len = 0
         self.next_refresh = 0
         self['station'].setText(rec['title'])
-        info = [x for x in (', '.join(rec.get('genres', [])[:4]), rec.get('location')) if x]
+        info = [
+            x for x in (
+                ', '.join(
+                    rec.get(
+                        'genres', [])[
+                        :4]), rec.get('location')) if x]
         self['station_info'].setText('  ·  '.join(info) or rec.get('desc', ''))
         self['title'].setText(rec['title'])
         self['artist'].setText(rec.get('format') or _('Live stream'))
@@ -1188,9 +1356,16 @@ class RadioMPlayer(Screen):
         self['label_history'].setText('')
         self['progress'].setValue(0)
         self['listeners'].setText(
-            _('%d listening') % rec.get('listeners', 0) if rec.get('src') == 'laut' else '')
-        self['key_yellow'].setText(_('Remove fav.') if settings.is_fav(rec) else _('Favourite'))
-        self['key_blue'].setText(dict(PLAYERS).get(settings.data.get('player'), 'GStreamer'))
+            _('%d listening') %
+            rec.get(
+                'listeners',
+                0) if rec.get('src') == 'laut' else '')
+        self['key_yellow'].setText(
+            _('Remove fav.') if settings.is_fav(rec) else _('Favourite'))
+        self['key_blue'].setText(
+            dict(PLAYERS).get(
+                settings.data.get('player'),
+                'GStreamer'))
         self.station_logo = None
         if rec.get('logo'):
             url = rec['logo']
@@ -1210,7 +1385,12 @@ class RadioMPlayer(Screen):
 
     def play(self):
         try:
-            NowPlaying.play(self.session, self.rec, settings.data.get('player', '4097'))
+            NowPlaying.play(
+                self.session,
+                self.rec,
+                settings.data.get(
+                    'player',
+                    '4097'))
         except Exception as e:
             print('[RadioM] play error: %s' % e)
             self['state'].setText(_('Playback error'))
@@ -1228,7 +1408,8 @@ class RadioMPlayer(Screen):
         self['key_green'].setText(_('Stop') if playing else _('Play'))
         parts = [_('▶ Playing') if playing else _('■ Stopped')]
         if NowPlaying.sleep_end:
-            parts.append(_('sleep in %d min') % max(1, int((NowPlaying.sleep_end - time()) / 60 + 0.5)))
+            parts.append(_('sleep in %d min') %
+                         max(1, int((NowPlaying.sleep_end - time()) / 60 + 0.5)))
         self['state'].setText('   '.join(parts))
 
     def step(self, delta):
@@ -1246,12 +1427,14 @@ class RadioMPlayer(Screen):
 
     def toggle_fav(self):
         added = settings.toggle_fav(self.rec)
-        self['key_yellow'].setText(_('Remove fav.') if added else _('Favourite'))
+        self['key_yellow'].setText(
+            _('Remove fav.') if added else _('Favourite'))
 
     def switch_player(self):
         keys = [p[0] for p in PLAYERS if p[0] != 'movie']
         cur = settings.data.get('player', '4097')
-        nxt = keys[(keys.index(cur) + 1) % len(keys)] if cur in keys else keys[0]
+        nxt = keys[(keys.index(cur) + 1) %
+                   len(keys)] if cur in keys else keys[0]
         settings.data['player'] = nxt
         settings.save()
         self['key_blue'].setText(dict(PLAYERS)[nxt])
@@ -1259,8 +1442,13 @@ class RadioMPlayer(Screen):
             self.play()
 
     def sleep_menu(self):
-        opts = [(_('Off'), 0)] + [(_('%d minutes') % m, m) for m in (15, 30, 45, 60, 90, 120)]
-        self.session.openWithCallback(self.sleep_done, ChoiceBox, title=_('Sleep timer'), list=opts)
+        opts = [(_('Off'), 0)] + [(_('%d minutes') % m, m)
+                                  for m in (15, 30, 45, 60, 90, 120)]
+        self.session.openWithCallback(
+            self.sleep_done,
+            ChoiceBox,
+            title=_('Sleep timer'),
+            list=opts)
 
     def sleep_done(self, choice):
         if choice is not None:
@@ -1272,7 +1460,8 @@ class RadioMPlayer(Screen):
         if not self.alive:
             return
         now = time()
-        if self.rec.get('src') == 'laut' and not self.fetching and now >= self.next_refresh:
+        if self.rec.get(
+                'src') == 'laut' and not self.fetching and now >= self.next_refresh:
             self.fetching = True
             station_id = self.rec['id']
             d = threads.deferToThread(L.fetch_song_info, station_id)
@@ -1283,7 +1472,8 @@ class RadioMPlayer(Screen):
             self['progress'].setValue(int(elapsed * 100 / self.song_len))
             self['elapsed'].setText(fmt_time(elapsed))
             self['duration'].setText('-' + fmt_time(self.song_len - elapsed))
-        if NowPlaying.sleep_end or (not NowPlaying.is_playing(self.rec) and self['key_green'].getText() == _('Stop')):
+        if NowPlaying.sleep_end or (not NowPlaying.is_playing(
+                self.rec) and self['key_green'].getText() == _('Stop')):
             self.update_state()
 
     def _fetch_finished(self, result):
@@ -1298,7 +1488,10 @@ class RadioMPlayer(Screen):
         if info.get('listeners') is not None:
             self['listeners'].setText(_('%d listening') % info['listeners'])
         if info.get('next'):
-            self['coming'].setText(_('Coming up: %s') % ', '.join(info['next']))
+            self['coming'].setText(
+                _('Coming up: %s') %
+                ', '.join(
+                    info['next']))
         if song and song.get('type', 'song') == 'song':
             artist = (song.get('artist') or {}).get('name', '') or ''
             title = song.get('title', '') or ''
@@ -1315,7 +1508,9 @@ class RadioMPlayer(Screen):
             key = artist + '|' + title
             if key != self.song_key:
                 self.song_key = key
-                self.set_song(artist, title, ('%s (%s)' % (album, year)) if album and year else album)
+                self.set_song(
+                    artist, title, ('%s (%s)' %
+                                    (album, year)) if album and year else album)
                 self.song_start = start or now
             self.song_len = length or 0
             if end and now < end < now + 1800 and start:
@@ -1336,8 +1531,12 @@ class RadioMPlayer(Screen):
             cover, backdrop = result
             if self.alive and key == self.song_key:
                 self.img_cover.show(cover or self.station_logo or DEFAULT_LOGO)
-                self.img_backdrop.show(backdrop or join(skin_path, 'bg_player.jpg'))
-        threads.deferToThread(L.fetch_cover, artist, title, self.rec.get('logo', '')).addCallback(done)
+                self.img_backdrop.show(
+                    backdrop or join(
+                        skin_path, 'bg_player.jpg'))
+        threads.deferToThread(
+            L.fetch_cover, artist, title, self.rec.get(
+                'logo', '')).addCallback(done)
 
     def show_history(self, history, current):
         lines = []
@@ -1364,7 +1563,8 @@ class RadioMPlayer(Screen):
         try:
             service = self.session.nav.getCurrentService()
             info = service and service.info()
-            tag = info.getInfoString(iServiceInformation.sTagTitle) if info else ''
+            tag = info.getInfoString(
+                iServiceInformation.sTagTitle) if info else ''
         except Exception:
             tag = ''
         if not tag:
@@ -1468,8 +1668,12 @@ def main(session, **kwargs):
 def Plugins(**kwargs):
     return PluginDescriptor(
         name='RadioM',
-        description=_('Thousands of web radios, favourites, covers') + ' V.' + __version__,
-        where=[PluginDescriptor.WHERE_PLUGINMENU, PluginDescriptor.WHERE_EXTENSIONSMENU],
+        description=_('Thousands of web radios, favourites, covers') +
+        ' V.' +
+        __version__,
+        where=[
+            PluginDescriptor.WHERE_PLUGINMENU,
+            PluginDescriptor.WHERE_EXTENSIONSMENU],
         icon='plugin.png',
         fnc=main,
     )

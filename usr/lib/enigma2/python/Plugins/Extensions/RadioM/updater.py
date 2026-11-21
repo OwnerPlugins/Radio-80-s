@@ -71,9 +71,15 @@ def check_latest():
             tag = data.get('tag_name', '')
             return {
                 'version': tag.lstrip('vV'),
-                'changelog': clean_changelog(data.get('body', '')),
-                'date': (data.get('published_at') or '')[:10],
-                'tarball': 'https://github.com/%s/archive/refs/tags/%s.tar.gz' % (GITHUB_REPO, tag),
+                'changelog': clean_changelog(
+                    data.get(
+                        'body',
+                        '')),
+                'date': (
+                    data.get('published_at') or '')[
+                    :10],
+                'tarball': 'https://github.com/%s/archive/refs/tags/%s.tar.gz' % (GITHUB_REPO,
+                                                                                  tag),
                 'source': 'release',
             }
         print('[RadioM] release api: HTTP %s' % r.status_code)
@@ -114,7 +120,12 @@ def _safe_members(tar, prefix):
 def install_tarball(url):
     """Download + install. Returns (ok, message)."""
     try:
-        r = requests.get(url, headers={'User-Agent': HEADERS['User-Agent']}, timeout=60, stream=True)
+        r = requests.get(
+            url,
+            headers={
+                'User-Agent': HEADERS['User-Agent']},
+            timeout=60,
+            stream=True)
         r.raise_for_status()
         with open(TMP_TAR, 'wb') as f:
             for chunk in r.iter_content(65536):
