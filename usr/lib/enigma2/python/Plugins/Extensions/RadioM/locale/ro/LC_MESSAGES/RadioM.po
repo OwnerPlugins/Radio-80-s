@@ -1,59 +1,393 @@
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: enigma 2\n"
-"PO-Revision-Date: 2026-02-08 01:27+0000\n"
-"Last-Translator:  <EMAIL@ADDRESS>\n"
-"Language-Team: Romanian <translation-team-ro@lists.sourceforge.net>\n"
+"Project-Id-Version: RadioM\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ASCII\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2;\n"
 
-msgid "Cancel"
-msgstr "Anula"
+msgid "Ask before installing"
+msgstr ""
 
-msgid "Cancel execution?"
-msgstr "Anulați execuția?"
+msgid "Install automatically"
+msgstr ""
 
-msgid "Congrats! You already have the latest version..."
-msgstr "Felicitari! Ai deja cea mai recentă versiune..."
+msgid "Never check"
+msgstr ""
 
-msgid "Console"
-msgstr "Consolă"
+msgid "Top"
+msgstr ""
 
-msgid "Dj:"
-msgstr "DJ:"
+msgid "Favourites"
+msgstr ""
 
-msgid "Do you want to install update ( %s ) now?"
-msgstr "Doriți să instalați actualizarea ( %s ) acum?"
+msgid "Recent"
+msgstr ""
 
-msgid "Error retrieving song"
-msgstr "Eroare la preluarea melodiei"
+msgid "Near you"
+msgstr ""
+
+msgid "Genres"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "listeners"
+msgstr ""
+
+msgid "Top genre on laut.fm"
+msgstr ""
+
+msgid "stations"
+msgstr ""
+
+msgid "Downloading RadioM %s from GitHub..."
+msgstr ""
+
+msgid "RadioM %s installed"
+msgstr ""
+
+msgid ""
+"RadioM %s has been installed.\n"
+"\n"
+"Restart the GUI now to use it?"
+msgstr ""
+
+msgid "Update failed"
+msgstr ""
+
+msgid ""
+"Update failed:\n"
+"%s"
+msgstr ""
+
+msgid "Loading stations..."
+msgstr ""
 
 msgid "Exit"
 msgstr "Ieșire"
 
+msgid "Play"
+msgstr ""
+
+msgid "Favourite"
+msgstr ""
+
+msgid "Next section"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "Downloading station list..."
+msgstr ""
+
+msgid "Loading stations... %d"
+msgstr ""
+
+msgid "No stations (%s). Details in %s"
+msgstr ""
+
+msgid "Network error (%s). Details in %s"
+msgstr ""
+
+msgid "e.g. %s"
+msgstr ""
+
+msgid "Genre: %s"
+msgstr ""
+
+msgid "Search: \"%s\""
+msgstr ""
+
+msgid "Playlist: %s"
+msgstr ""
+
+msgid "Nothing found"
+msgstr ""
+
+msgid "Your favourites"
+msgstr ""
+
+msgid "No favourites yet: press YELLOW on a station"
+msgstr ""
+
+msgid "Recently played stations"
+msgstr ""
+
+msgid "Nothing played yet"
+msgstr ""
+
+msgid "Near %s"
+msgstr ""
+
+msgid "Stations near you"
+msgstr ""
+
+msgid "Finding your position..."
+msgstr ""
+
+msgid "No stations with a position near you"
+msgstr ""
+
+msgid "All genres"
+msgstr ""
+
+msgid "Press OK to search stations, artists, genres, cities"
+msgstr ""
+
+msgid "Top stations"
+msgstr ""
+
+msgid "Top genre"
+msgstr ""
+
+msgid "Genre"
+msgstr ""
+
+msgid "%d stations in the list"
+msgstr ""
+
+msgid ""
+"Press OK to see all the stations of this genre, also the ones not in the top"
+" list."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "%d listening now"
+msgstr ""
+
+msgid "Custom stream"
+msgstr ""
+
+msgid "Remove fav."
+msgstr ""
+
+msgid "Loading more stations from laut.fm..."
+msgstr ""
+
+msgid "Search: station, artist, genre, city..."
+msgstr ""
+
+msgid "Searching on laut.fm..."
+msgstr ""
+
+msgid "Online search not available, local results only"
+msgstr ""
+
+msgid "Position not available"
+msgstr ""
+
+msgid "Added to favourites"
+msgstr ""
+
+msgid "Removed from favourites"
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "DJ"
+msgstr ""
+
+msgid "Listeners now"
+msgstr ""
+
+msgid "Page"
+msgstr ""
+
+msgid "Stream"
+msgstr ""
+
+msgid "Local playlists"
+msgstr ""
+
+msgid "Update my position (Near you)"
+msgstr ""
+
+msgid "Player: %s"
+msgstr ""
+
+msgid "Reload station list"
+msgstr ""
+
+msgid "About, updates and donations"
+msgstr ""
+
+msgid "Stop playback"
+msgstr ""
+
+msgid "Install update %s"
+msgstr ""
+
+msgid "RadioM menu"
+msgstr ""
+
+msgid "No .txt playlist in %s"
+msgstr ""
+
+msgid "Update %s available: MENU to install"
+msgstr ""
+
+msgid ""
+"RadioM %s is available on GitHub.\n"
+"\n"
+"%s\n"
+"\n"
+"Install it now?"
+msgstr ""
+
+msgid "About RadioM"
+msgstr ""
+
+msgid "Version %s"
+msgstr ""
+
+msgid "Created by Lululla"
+msgstr ""
+
+msgid "Stations and data: laut.fm (User Generated Radio)"
+msgstr ""
+
+msgid "Cover art: iTunes Search API"
+msgstr ""
+
+msgid "License: GNU GPL v2"
+msgstr ""
+
+msgid ""
+"Thousands of web radios sorted by live listeners, favourites, online search,"
+" genres, stations near you, cover art, recently played songs and sleep "
+"timer."
+msgstr ""
+
+msgid "Do you like RadioM? Offer a coffee to the developer!"
+msgstr ""
+
+msgid ""
+"Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  ·  0: this "
+"screen"
+msgstr ""
+
+msgid "Scan the code with your phone camera"
+msgstr ""
+
+msgid "Thank you!"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Check update"
+msgstr ""
+
+msgid "Update mode"
+msgstr ""
+
+msgid "Changelog"
+msgstr ""
+
+msgid "Automatic updates: %s"
+msgstr ""
+
+msgid "GitHub not reachable"
+msgstr ""
+
+msgid "New version %s available%s: press GREEN"
+msgstr ""
+
+msgid "Install %s"
+msgstr ""
+
+msgid "Up to date: latest release is %s%s"
+msgstr ""
+
+msgid "Checking GitHub..."
+msgstr ""
+
+msgid ""
+"RadioM %s\n"
+"\n"
+"%s"
+msgstr ""
+
+msgid "NOW PLAYING"
+msgstr ""
+
+msgid "RECENTLY PLAYED"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Sleep timer"
+msgstr ""
+
+msgid "Prev / next station"
+msgstr ""
+
+msgid "Live stream"
+msgstr ""
+
+msgid "%d listening"
+msgstr ""
+
+msgid "Playback error"
+msgstr ""
+
+msgid "▶ Playing"
+msgstr ""
+
+msgid "■ Stopped"
+msgstr ""
+
+msgid "sleep in %d min"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "%d minutes"
+msgstr ""
+
+msgid "Coming up: %s"
+msgstr ""
+
+msgid "Thousands of web radios, favourites, covers"
+msgstr ""
+
+msgid "Cancel"
+msgstr "Anula"
+
 msgid "Hide/Show"
 msgstr "Ascunde/Afișează"
-
-msgid "Online:"
-msgstr ""
 
 msgid "Restart"
 msgstr "Repornire"
 
-msgid "Select"
-msgstr "Selecta"
+msgid "Console"
+msgstr "Consolă"
 
-msgid "Select and Play"
-msgstr "Selectați și Redați"
+msgid ""
+"Execution progress\n"
+"\n"
+msgstr ""
 
-msgid "Unknown Title"
-msgstr "Titlu necunoscut"
-
-msgid "Update"
-msgstr "Actualizare"
-
-msgid "Update Aborted!"
-msgstr "Actualizare a fost anulată!"
+msgid "Cancel execution?"
+msgstr "Anulați execuția?"

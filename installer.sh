@@ -1,7 +1,7 @@
 #!/bin/bash
 
-version='1.5'
-changelog='\nRecoded tag stream'
+version='1.6'
+changelog='\nNew synthwave skin, sections like laut.fm, online search, genres, near you, covers, sleep timer, faster list, GitHub updates'
 
 TMPPATH=/tmp/Radio-80-s-install
 FILEPATH=/tmp/Radio-80-s-main.tar.gz
@@ -101,7 +101,7 @@ if [ "$OSTYPE" = "OE" ]; then
 fi
 
 echo "Downloading Radio-80-s..."
-wget --no-check-certificate 'https://github.com/Belfagor2005/Radio-80-s/archive/refs/heads/main.tar.gz' -O "$FILEPATH"
+wget --no-check-certificate 'https://github.com/OwnerPlugins/Radio-80-s/archive/refs/heads/main.tar.gz' -O "$FILEPATH"
 if [ $? -ne 0 ]; then
     echo "Failed to download Radio-80-s package!"
     cleanup

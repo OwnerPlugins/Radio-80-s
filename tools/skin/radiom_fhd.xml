@@ -1,0 +1,50 @@
+<screen name="RadioMMain" position="0,0" size="1920,1080" title="RadioM" backgroundColor="#00000000" flags="wfNoBorder">
+    <ePixmap position="0,0" size="1920,1080" pixmap="%SKIN%/bg_main.jpg" zPosition="-3" />
+    <!-- header -->
+    <ePixmap position="50,22" size="560,110" pixmap="%SKIN%/title.png" alphatest="blend" zPosition="1" />
+    <widget name="nowplaying" position="660,46" size="760,50" font="Regular;32" foregroundColor="#38dcff" backgroundColor="#0c041c" transparent="1" halign="center" valign="center" zPosition="2" />
+    <widget source="global.CurrentTime" render="Label" position="1500,30" size="360,60" font="Regular;50" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="right" valign="center" zPosition="2">
+        <convert type="ClockToText">Default</convert>
+    </widget>
+    <widget source="global.CurrentTime" render="Label" position="1360,88" size="500,34" font="Regular;26" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="right" valign="center" zPosition="2">
+        <convert type="ClockToText">Format:%A %d %B</convert>
+    </widget>
+
+    <!-- left: selected station -->
+    <ePixmap position="60,140" size="560,840" pixmap="%SKIN%/panel_left.png" alphatest="blend" zPosition="0" />
+    <ePixmap position="110,160" size="460,460" pixmap="%SKIN%/logo_shadow.png" alphatest="blend" zPosition="1" />
+    <widget name="logo" position="140,190" size="400,400" zPosition="2" alphatest="blend" transparent="1" />
+    <widget name="st_name" position="90,630" size="500,56" font="Regular;42" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="center" valign="center" zPosition="2" />
+    <widget name="st_genres" position="90,688" size="500,38" font="Regular;28" foregroundColor="#ff4fb0" backgroundColor="#0c041c" transparent="1" halign="center" valign="center" zPosition="2" />
+    <widget name="st_meta" position="90,728" size="500,36" font="Regular;25" foregroundColor="#38dcff" backgroundColor="#0c041c" transparent="1" halign="center" valign="center" zPosition="2" />
+    <eLabel position="140,778" size="400,2" backgroundColor="#4d2a6e" zPosition="2" />
+    <widget name="st_desc" position="95,792" size="490,128" font="Regular;25" foregroundColor="#c9bde0" backgroundColor="#0c041c" transparent="1" halign="center" valign="top" zPosition="2" />
+    <widget name="st_listeners" position="90,926" size="500,40" font="Regular;30" foregroundColor="#ffc844" backgroundColor="#0c041c" transparent="1" halign="center" valign="center" zPosition="2" />
+
+    <!-- right: station list -->
+    <ePixmap position="660,140" size="1180,840" pixmap="%SKIN%/panel_right.png" alphatest="blend" zPosition="0" />
+    <widget name="tab_top" position="700,150" size="120,48" font="Regular;29" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="tab_fav" position="825,150" size="220,48" font="Regular;29" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="tab_recent" position="1050,150" size="171,48" font="Regular;29" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="tab_near" position="1226,150" size="202,48" font="Regular;29" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="tab_genres" position="1434,150" size="173,48" font="Regular;29" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="tab_search" position="1613,150" size="197,48" font="Regular;29" foregroundColor="#b8a3dc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <eLabel position="700,202" size="1100,2" backgroundColor="#4d2a6e" zPosition="2" />
+    <widget name="mode" position="700,210" size="1100,40" font="Regular;27" foregroundColor="#ff4fb0" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="list" position="690,254" size="1120,688" selectionPixmap="%SKIN%/sel.png" scrollbarMode="showOnDemand" backgroundColor="#0c041c" transparent="1" zPosition="3" />
+    <widget name="status" position="700,938" size="1100,40" font="Regular;27" foregroundColor="#ffc844" backgroundColor="#0c041c" transparent="1" halign="center" valign="center" zPosition="4" />
+
+    <!-- footer -->
+    <ePixmap position="70,1012" size="30,30" pixmap="%SKIN%/btn_red.png" alphatest="blend" zPosition="2" />
+    <widget name="key_red" position="110,1007" size="220,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="340,1012" size="30,30" pixmap="%SKIN%/btn_green.png" alphatest="blend" zPosition="2" />
+    <widget name="key_green" position="380,1007" size="220,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="610,1012" size="30,30" pixmap="%SKIN%/btn_yellow.png" alphatest="blend" zPosition="2" />
+    <widget name="key_yellow" position="650,1007" size="240,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="900,1012" size="30,30" pixmap="%SKIN%/btn_blue.png" alphatest="blend" zPosition="2" />
+    <widget name="key_blue" position="940,1007" size="260,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="1210,1010" size="90,34" pixmap="%SKIN%/btn_menu.png" alphatest="blend" zPosition="2" />
+    <widget name="key_menu" position="1310,1007" size="300,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="1620,1010" size="90,34" pixmap="%SKIN%/btn_0.png" alphatest="blend" zPosition="2" />
+    <widget name="key_about" position="1720,1007" size="160,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+</screen>

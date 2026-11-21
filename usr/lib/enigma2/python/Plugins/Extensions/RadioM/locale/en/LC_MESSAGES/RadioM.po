@@ -1,64 +1,415 @@
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: enigma 2\n"
-"PO-Revision-Date: 2026-02-08 01:26+0000\n"
-"Last-Translator:  <EMAIL@ADDRESS>\n"
-"Language-Team: English\n"
+"Project-Id-Version: RadioM\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ASCII\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#, fuzzy
-msgid "Cancel"
-msgstr "Cancel"
+msgid "Ask before installing"
+msgstr "Ask before installing"
 
-msgid "Cancel execution?"
-msgstr "Cancel execution?"
+msgid "Install automatically"
+msgstr "Install automatically"
 
-msgid "Congrats! You already have the latest version..."
-msgstr "Congrats! You already have the latest version..."
+msgid "Never check"
+msgstr "Never check"
 
-msgid "Console"
-msgstr "Console"
+msgid "Top"
+msgstr "Top"
 
-msgid "Dj:"
-msgstr "Dj:"
+msgid "Favourites"
+msgstr "Favourites"
 
-msgid "Do you want to install update ( %s ) now?"
-msgstr "Do you want to install update ( %s ) now?"
+msgid "Recent"
+msgstr "Recent"
+
+msgid "Near you"
+msgstr "Near you"
+
+msgid "Genres"
+msgstr "Genres"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "listeners"
+msgstr "listeners"
+
+msgid "Top genre on laut.fm"
+msgstr "Top genre on laut.fm"
+
+msgid "stations"
+msgstr "stations"
+
+msgid "Downloading RadioM %s from GitHub..."
+msgstr "Downloading RadioM %s from GitHub..."
+
+msgid "RadioM %s installed"
+msgstr "RadioM %s installed"
+
+msgid ""
+"RadioM %s has been installed.\n"
+"\n"
+"Restart the GUI now to use it?"
+msgstr ""
+"RadioM %s has been installed.\n"
+"\n"
+"Restart the GUI now to use it?"
+
+msgid "Update failed"
+msgstr "Update failed"
+
+msgid ""
+"Update failed:\n"
+"%s"
+msgstr ""
+"Update failed:\n"
+"%s"
+
+msgid "Loading stations..."
+msgstr "Loading stations..."
 
 msgid "Exit"
 msgstr "Exit"
 
+msgid "Play"
+msgstr "Play"
+
+msgid "Favourite"
+msgstr "Favourite"
+
+msgid "Next section"
+msgstr "Next section"
+
+msgid "Menu"
+msgstr "Menu"
+
+msgid "About"
+msgstr "About"
+
+msgid "Downloading station list..."
+msgstr "Downloading station list..."
+
+msgid "Loading stations... %d"
+msgstr "Loading stations... %d"
+
+msgid "No stations (%s). Details in %s"
+msgstr "No stations (%s). Details in %s"
+
+msgid "Network error (%s). Details in %s"
+msgstr "Network error (%s). Details in %s"
+
+msgid "e.g. %s"
+msgstr "e.g. %s"
+
+msgid "Genre: %s"
+msgstr "Genre: %s"
+
+msgid "Search: \"%s\""
+msgstr "Search: \"%s\""
+
+msgid "Playlist: %s"
+msgstr "Playlist: %s"
+
+msgid "Nothing found"
+msgstr "Nothing found"
+
+msgid "Your favourites"
+msgstr "Your favourites"
+
+msgid "No favourites yet: press YELLOW on a station"
+msgstr "No favourites yet: press YELLOW on a station"
+
+msgid "Recently played stations"
+msgstr "Recently played stations"
+
+msgid "Nothing played yet"
+msgstr "Nothing played yet"
+
+msgid "Near %s"
+msgstr "Near %s"
+
+msgid "Stations near you"
+msgstr "Stations near you"
+
+msgid "Finding your position..."
+msgstr "Finding your position..."
+
+msgid "No stations with a position near you"
+msgstr "No stations with a position near you"
+
+msgid "All genres"
+msgstr "All genres"
+
+msgid "Press OK to search stations, artists, genres, cities"
+msgstr "Press OK to search stations, artists, genres, cities"
+
+msgid "Top stations"
+msgstr "Top stations"
+
+msgid "Top genre"
+msgstr "Top genre"
+
+msgid "Genre"
+msgstr "Genre"
+
+msgid "%d stations in the list"
+msgstr "%d stations in the list"
+
+msgid ""
+"Press OK to see all the stations of this genre, also the ones not in the top"
+" list."
+msgstr ""
+"Press OK to see all the stations of this genre, also the ones not in the top"
+" list."
+
+msgid "Open"
+msgstr "Open"
+
+msgid "%d listening now"
+msgstr "%d listening now"
+
+msgid "Custom stream"
+msgstr "Custom stream"
+
+msgid "Remove fav."
+msgstr "Remove fav."
+
+msgid "Loading more stations from laut.fm..."
+msgstr "Loading more stations from laut.fm..."
+
+msgid "Search: station, artist, genre, city..."
+msgstr "Search: station, artist, genre, city..."
+
+msgid "Searching on laut.fm..."
+msgstr "Searching on laut.fm..."
+
+msgid "Online search not available, local results only"
+msgstr "Online search not available, local results only"
+
+msgid "Position not available"
+msgstr "Position not available"
+
+msgid "Added to favourites"
+msgstr "Added to favourites"
+
+msgid "Removed from favourites"
+msgstr "Removed from favourites"
+
+msgid "Format"
+msgstr "Format"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "DJ"
+msgstr "DJ"
+
+msgid "Listeners now"
+msgstr "Listeners now"
+
+msgid "Page"
+msgstr "Page"
+
+msgid "Stream"
+msgstr "Stream"
+
+msgid "Local playlists"
+msgstr "Local playlists"
+
+msgid "Update my position (Near you)"
+msgstr "Update my position (Near you)"
+
+msgid "Player: %s"
+msgstr "Player: %s"
+
+msgid "Reload station list"
+msgstr "Reload station list"
+
+msgid "About, updates and donations"
+msgstr "About, updates and donations"
+
+msgid "Stop playback"
+msgstr "Stop playback"
+
+msgid "Install update %s"
+msgstr "Install update %s"
+
+msgid "RadioM menu"
+msgstr "RadioM menu"
+
+msgid "No .txt playlist in %s"
+msgstr "No .txt playlist in %s"
+
+msgid "Update %s available: MENU to install"
+msgstr "Update %s available: MENU to install"
+
+msgid ""
+"RadioM %s is available on GitHub.\n"
+"\n"
+"%s\n"
+"\n"
+"Install it now?"
+msgstr ""
+"RadioM %s is available on GitHub.\n"
+"\n"
+"%s\n"
+"\n"
+"Install it now?"
+
+msgid "About RadioM"
+msgstr "About RadioM"
+
+msgid "Version %s"
+msgstr "Version %s"
+
+msgid "Created by Lululla"
+msgstr "Created by Lululla"
+
+msgid "Stations and data: laut.fm (User Generated Radio)"
+msgstr "Stations and data: laut.fm (User Generated Radio)"
+
+msgid "Cover art: iTunes Search API"
+msgstr "Cover art: iTunes Search API"
+
+msgid "License: GNU GPL v2"
+msgstr "License: GNU GPL v2"
+
+msgid ""
+"Thousands of web radios sorted by live listeners, favourites, online search,"
+" genres, stations near you, cover art, recently played songs and sleep "
+"timer."
+msgstr ""
+"Thousands of web radios sorted by live listeners, favourites, online search,"
+" genres, stations near you, cover art, recently played songs and sleep "
+"timer."
+
+msgid "Do you like RadioM? Offer a coffee to the developer!"
+msgstr "Do you like RadioM? Offer a coffee to the developer!"
+
+msgid ""
+"Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  ·  0: this "
+"screen"
+msgstr ""
+"Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  ·  0: this "
+"screen"
+
+msgid "Scan the code with your phone camera"
+msgstr "Scan the code with your phone camera"
+
+msgid "Thank you!"
+msgstr "Thank you!"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Check update"
+msgstr "Check update"
+
+msgid "Update mode"
+msgstr "Update mode"
+
+msgid "Changelog"
+msgstr "Changelog"
+
+msgid "Automatic updates: %s"
+msgstr "Automatic updates: %s"
+
+msgid "GitHub not reachable"
+msgstr "GitHub not reachable"
+
+msgid "New version %s available%s: press GREEN"
+msgstr "New version %s available%s: press GREEN"
+
+msgid "Install %s"
+msgstr "Install %s"
+
+msgid "Up to date: latest release is %s%s"
+msgstr "Up to date: latest release is %s%s"
+
+msgid "Checking GitHub..."
+msgstr "Checking GitHub..."
+
+msgid ""
+"RadioM %s\n"
+"\n"
+"%s"
+msgstr ""
+"RadioM %s\n"
+"\n"
+"%s"
+
+msgid "NOW PLAYING"
+msgstr "NOW PLAYING"
+
+msgid "RECENTLY PLAYED"
+msgstr "RECENTLY PLAYED"
+
+msgid "Back"
+msgstr "Back"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Sleep timer"
+msgstr "Sleep timer"
+
+msgid "Prev / next station"
+msgstr "Prev / next station"
+
+msgid "Live stream"
+msgstr "Live stream"
+
+msgid "%d listening"
+msgstr "%d listening"
+
+msgid "Playback error"
+msgstr "Playback error"
+
+msgid "▶ Playing"
+msgstr "▶ Playing"
+
+msgid "■ Stopped"
+msgstr "■ Stopped"
+
+msgid "sleep in %d min"
+msgstr "sleep in %d min"
+
+msgid "Off"
+msgstr "Off"
+
+msgid "%d minutes"
+msgstr "%d minutes"
+
+msgid "Coming up: %s"
+msgstr "Coming up: %s"
+
+msgid "Thousands of web radios, favourites, covers"
+msgstr "Thousands of web radios, favourites, covers"
+
+msgid "Cancel"
+msgstr "Cancel"
+
 msgid "Hide/Show"
 msgstr "Hide/Show"
-
-msgid "No song"
-msgstr ""
-
-msgid "Online:"
-msgstr "Online:"
 
 msgid "Restart"
 msgstr "Restart"
 
-msgid "Select"
-msgstr "Select"
+msgid "Console"
+msgstr "Console"
 
-msgid "Select and Play"
-msgstr "Select and Play"
+msgid ""
+"Execution progress\n"
+"\n"
+msgstr ""
+"Execution progress\n"
+"\n"
 
-#, fuzzy
-msgid "Unknown"
-msgstr "Unknown Title"
-
-msgid "Update"
-msgstr "Update"
-
-msgid "Update Aborted!"
-msgstr "Update Aborted!"
-
-#~ msgid "Error retrieving song"
-#~ msgstr "Error retrieving song"
+msgid "Cancel execution?"
+msgstr "Cancel execution?"

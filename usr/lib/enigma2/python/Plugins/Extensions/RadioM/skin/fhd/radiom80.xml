@@ -1,21 +1,48 @@
-<screen name="radiom80" position="0,0" size="1920,1080" title="RadioM" backgroundColor="#FF000000" flags="wfNoBorder">
-    <!-- <ePixmap position="0,0" size="1920,1080" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/foreg.jpg" scale="1" zPosition="-2" /> -->
-    <ePixmap                    position="0,680" size="1920,400" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/80bar.png" alphatest="off" zPosition="-1" />
-    <widget name="back"         position="0,0" size="1920,1080" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/foreg.jpg" scale="1" zPosition="-2" />
-    <widget name="logo"         position="20,720" size="340,340" zPosition="2" alphatest="blend" scale="1" transparent="1" />
-    <widget name="info"         position="380,720" size="0,0" font="Regular;40" foregroundColor="yellow" backgroundColor="#000000" transparent="1" halign="left" valign="center" zPosition="4" />
-    <widget name="format"       position="400,715" size="1500,40" font="Regular;34" foregroundColor="yellow" backgroundColor="#000000" transparent="1" halign="left" valign="center" zPosition="4" />
-<!--     <widget name="duration"     position="1509,954" size="370,40" font="Regular;34" foregroundColor="yellow" backgroundColor="#000000" transparent="1" halign="right" valign="center" zPosition="4" />
- -->    <widget name="list"         position="400,760" size="600,50" zPosition="4" scrollbarMode="showOnDemand" foregroundColorSelected="#ffffff" backgroundColorSelected="#1b3c85" transparent="1" />
-    <widget name="description"  position="400,816" zPosition="4" size="950,139" font="Regular; 30" foregroundColor="#a0a0a0" backgroundColor="#000000" transparent="1" halign="left" valign="center" />
-    <widget name="djs"          position="400,955" zPosition="4" size="1000,50" font="Regular; 30" foregroundColor="yellow" backgroundColor="#000000" transparent="1" halign="left" valign="center" />
-    <widget name="current_song" position="880,790" zPosition="4" size="1000,180" font="Regular; 30" foregroundColor="#ffffff" backgroundColor="#000000" halign="right" valign="center" transparent="1" />
-    <widget name="listeners"    position="880,1010" zPosition="4" render="Label" size="1000,40" font="Regular; 30" foregroundColor="yellow" backgroundColor="#000000" transparent="1" halign="right" valign="center" />
-    <eLabel position="400,1000" zPosition="1" size="1480,3" backgroundColor="#404040" />
-    <eLabel position="400,1020" zPosition="1" size="30,30" backgroundColor="red" cornerRadius="10" />
-    <widget name="key_red"      position="440,1020" size="200,32" valign="center" halign="left" zPosition="4" foregroundColor="#ffffff" backgroundColor="#000000" font="Regular;30" transparent="1" />
-    <eLabel position="680,1020" zPosition="1" size="30,30" backgroundColor="green" cornerRadius="10" />
-    <widget name="key_green"    position="730,1020" size="200,32" valign="center" halign="left" zPosition="4" foregroundColor="#ffffff" backgroundColor="#000000" font="Regular;30" transparent="1" />
-    <eLabel position="980,1020" zPosition="1" size="30,30" backgroundColor="blue" cornerRadius="10" />
-    <widget name="key_blue"     position="1020,1020" size="200,32" valign="center" halign="left" zPosition="4" foregroundColor="#ffffff" backgroundColor="#000000" font="Regular;30" transparent="1" />
+<screen name="RadioMPlayer" position="0,0" size="1920,1080" title="RadioM" backgroundColor="#00000000" flags="wfNoBorder">
+    <widget name="backdrop" position="0,0" size="1920,1080" zPosition="-3" transparent="0" />
+    <ePixmap position="0,0" size="1920,1080" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/vignette.png" alphatest="blend" zPosition="-2" />
+
+    <!-- top bar: station -->
+    <widget name="stlogo" position="80,50" size="100,100" zPosition="2" alphatest="blend" transparent="1" />
+    <widget name="station" position="205,50" size="1100,56" font="Regular;44" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="station_info" position="205,108" size="1100,40" font="Regular;28" foregroundColor="#ff4fb0" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget source="global.CurrentTime" render="Label" position="1500,46" size="360,60" font="Regular;50" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="right" valign="center" zPosition="2">
+        <convert type="ClockToText">Default</convert>
+    </widget>
+    <widget name="state" position="1260,108" size="600,40" font="Regular;28" foregroundColor="#38dcff" backgroundColor="#0c041c" transparent="1" halign="right" valign="center" zPosition="2" />
+
+    <!-- cover -->
+    <ePixmap position="80,200" size="640,640" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/cover_shadow.png" alphatest="blend" zPosition="0" />
+    <widget name="cover" position="120,240" size="560,560" zPosition="2" alphatest="blend" transparent="1" />
+
+    <!-- song -->
+    <widget name="label_now" position="790,240" size="700,38" font="Regular;28" foregroundColor="#ff4fb0" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="listeners" position="1460,240" size="400,38" font="Regular;28" foregroundColor="#ffc844" backgroundColor="#0c041c" transparent="1" halign="right" valign="center" zPosition="2" />
+    <widget name="title" position="790,286" size="1070,150" font="Regular;62" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="artist" position="790,442" size="1070,60" font="Regular;44" foregroundColor="#e2d4ff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="album" position="790,506" size="1070,44" font="Regular;30" foregroundColor="#a993cc" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+
+    <ePixmap position="790,590" size="1040,10" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/progress_bg.png" alphatest="blend" zPosition="1" />
+    <widget name="progress" position="790,590" size="1040,10" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/progress.png" transparent="1" zPosition="2" />
+    <widget name="elapsed" position="790,610" size="200,36" font="Regular;26" foregroundColor="#c9bde0" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="duration" position="1630,610" size="200,36" font="Regular;26" foregroundColor="#c9bde0" backgroundColor="#0c041c" transparent="1" halign="right" valign="center" zPosition="2" />
+
+    <widget name="label_history" position="790,676" size="700,36" font="Regular;26" foregroundColor="#ff4fb0" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <widget name="history" position="790,718" size="1070,180" font="Regular;29" foregroundColor="#c9bde0" backgroundColor="#0c041c" transparent="1" halign="left" valign="top" zPosition="2" />
+
+    <widget name="coming" position="790,912" size="1070,40" font="Regular;27" foregroundColor="#38dcff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+
+    <!-- footer -->
+    <ePixmap position="70,1012" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/btn_red.png" alphatest="blend" zPosition="2" />
+    <widget name="key_red" position="110,1007" size="200,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="320,1012" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/btn_green.png" alphatest="blend" zPosition="2" />
+    <widget name="key_green" position="360,1007" size="200,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="570,1012" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/btn_yellow.png" alphatest="blend" zPosition="2" />
+    <widget name="key_yellow" position="610,1007" size="240,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="860,1012" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/btn_blue.png" alphatest="blend" zPosition="2" />
+    <widget name="key_blue" position="900,1007" size="240,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="1150,1010" size="90,34" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/btn_menu.png" alphatest="blend" zPosition="2" />
+    <widget name="key_menu" position="1250,1007" size="250,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
+    <ePixmap position="1510,1010" size="90,34" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RadioM/skin/fhd/btn_lr.png" alphatest="blend" zPosition="2" />
+    <widget name="key_lr" position="1610,1007" size="260,40" font="Regular;28" foregroundColor="#ffffff" backgroundColor="#0c041c" transparent="1" halign="left" valign="center" zPosition="2" />
 </screen>

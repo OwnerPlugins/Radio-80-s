@@ -647,12 +647,12 @@ def fix_po_file(po_file):
 # ============================================================
 # LANGUAGE WHITELIST CONFIGURATION
 # ============================================================
-# Lingue di default: le più conosciute al mondo.
+# Lingue di default: 15 lingue standard (le altre appesantiscono il pacchetto).
 # Puoi sovrascrivere questa lista con la variabile d'ambiente KEEP_LANGS
 # (lista separata da virgole), es. KEEP_LANGS="en,it,fr,de,es,pt"
 DEFAULT_KEEP_LANGS = [
-    'en', 'it', 'fr', 'de', 'es', 'pt', 'ru', 'zh', 'ja', 'ar',
-    'hi', 'bn', 'id', 'tr', 'ko', 'vi', 'pl', 'uk', 'fa', 'th'
+    'en', 'it', 'de', 'fr', 'es', 'pt', 'nl', 'pl', 'ru', 'tr',
+    'el', 'cs', 'hu', 'ro', 'ar'
 ]
 
 _env_langs = environ.get('KEEP_LANGS', '').strip()

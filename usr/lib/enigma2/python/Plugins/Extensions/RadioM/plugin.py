@@ -1,1286 +1,1475 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""
+#########################################################
+#                                                       #
+#  RadioM Plugin                                        #
+#  Version: 1.6                                         #
+#  Created by Lululla (https://github.com/Belfagor2005) #
+#  License: Gnu Gpl v2                                  #
+#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
+#                                                       #
+#  Credits:                                             #
+#  - Original concept by Lululla                        #
+#  - Development by Lululla                             #
+#  Usage of this code without proper attribution        #
+#  is strictly prohibited.                              #
+#  For modifications and redistribution,                #
+#  please maintain this credit header.                  #
+#########################################################
+
+1.6 changes
+ - laut.fm style sections: Top, Favourites, Recent, Near you, Genres, Search
+ - online search (station names, descriptions, artists) + genre pages
+ - station list loaded in background + local cache (no more GUI freeze)
+ - "Now Playing": cover, blurred backdrop, progress bar, recently played,
+   upcoming artists, prev/next station, sleep timer, ICY titles
+ - About screen with donation QR codes
+ - self update from GitHub Releases (notify / automatic / off)
+"""
+
 from __future__ import print_function
-from Components.AVSwitch import AVSwitch
+
+import codecs
+import json
+import sys
+from os import listdir
+from os.path import exists, join, dirname
+from time import time, localtime, strftime
+
 from Components.ActionMap import ActionMap
-from Components.Button import Button
 from Components.Label import Label
 from Components.MenuList import MenuList
-from Components.MultiContent import MultiContentEntryPixmapAlphaTest, MultiContentEntryText
+from Components.MultiContent import MultiContentEntryText
+try:
+    from Components.MultiContent import MultiContentEntryPixmapAlphaBlend
+except ImportError:
+    from Components.MultiContent import MultiContentEntryPixmapAlphaTest as MultiContentEntryPixmapAlphaBlend
 from Components.Pixmap import Pixmap
-from Components.ServiceEventTracker import InfoBarBase
+from Components.ProgressBar import ProgressBar
+from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Plugins.Plugin import PluginDescriptor
-from Screens.MessageBox import MessageBox
+from Screens.ChoiceBox import ChoiceBox
 from Screens.InfoBarGenerics import (
     InfoBarMenu,
     InfoBarSeek,
     InfoBarNotifications,
     InfoBarShowHide,
 )
+from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
+from Screens.VirtualKeyBoard import VirtualKeyBoard
 from enigma import (
     RT_HALIGN_LEFT,
+    RT_HALIGN_RIGHT,
     RT_VALIGN_CENTER,
-    eServiceReference,
-    getDesktop,
-    eTimer,
-    loadPNG,
     eListboxPythonMultiContent,
+    eServiceReference,
+    eTimer,
     gFont,
+    gRGB,
+    getDesktop,
+    iPlayableService,
+    iServiceInformation,
+    loadPNG,
 )
-from re import sub
-from os.path import join, dirname, exists, getsize
-from os import walk, remove
-import sys
-import requests
-import codecs
-import six
-from json import loads as json_loads
-from datetime import datetime as dt
-from time import time
-from PIL import Image
-import shutil
-import logging
+from twisted.internet import reactor, threads
 
 from . import _, Utils, __version__
+from . import lautapi as L
+from . import updater
 from .PicLoader import PicLoader
-from .Console import Console as xConsole
-
-"""
-#########################################################
-#                                                       #
-#  RadioM Plugin                                        #
-#  Version: 1.4                                         #
-#  Created by Lululla (https://github.com/Belfagor2005) #
-#  Modified by Mmark                                    #
-#  License: Gnu Gpl v2                                  #
-#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#  Last Modified: "17:38 - 20251125"                    #
-#                                                       #
-#  Credits:                                             #
-#  - Original concept by Lululla                        #
-#  - Development by Mmark                               #
-#  Usage of this code without proper attribution        #
-#  is strictly prohibited.                              #
-#  For modifications and redistribution,                #
-#  please maintain this credit header.                  #
-#########################################################
-"""
-
 
 try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
+    from Components.AVSwitch import AVSwitch
+    sc = AVSwitch().getFramebufferScale()
+except Exception:
+    sc = (1, 1)
 
 
-logging.basicConfig(level=logging.DEBUG)
-requests_log = logging.getLogger("requests.packages.urllib3")
-requests_log.setLevel(logging.DEBUG)
-requests_log.propagate = True
-
-
-global skin_path, x, y
+# --------------------------------------------------------------------------
+#  Paths / constants
+# --------------------------------------------------------------------------
 
 THISPLUG = dirname(sys.modules[__name__].__file__)
-skin_path = THISPLUG
-iconpic = 'plugin.png'
+PLAYLISTS = join(THISPLUG, 'Playlists')
+SETTINGS_FILE = '/etc/enigma2/radiom.json'
+
 screenWidth = getDesktop(0).size().width()
-installer_url = 'aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0JlbGZhZ29yMjAwNS9SYWRpby04MC1zL21haW4vaW5zdGFsbGVyLnNo'
-developer_url = 'aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy9CZWxmYWdvcjIwMDUvUmFkaW8tODAtcw=='
-aspect_manager = Utils.AspectManager()
-sc = AVSwitch().getFramebufferScale()
-
-x = 220
-y = 220
-PY3 = sys.version_info.major >= 3
-
-if PY3:
-    unidecode = str
-
-unicode = six.text_type
-
-
-if screenWidth == 2560:
-    skin_path = THISPLUG + '/skin/wqhd'
-    x = 450
-    y = 450
-elif screenWidth == 1920:
-    skin_path = THISPLUG + '/skin/fhd'
-    x = 340
-    y = 340
+if screenWidth >= 2560:
+    skin_path = join(THISPLUG, 'skin', 'wqhd')
+elif screenWidth >= 1920:
+    skin_path = join(THISPLUG, 'skin', 'fhd')
 else:
-    skin_path = THISPLUG + '/skin/hd'
-    # x = 220
-    # y = 220
+    skin_path = join(THISPLUG, 'skin', 'hd')
+# every pixel value in the code is designed for 1920 and scaled
+SCALE = screenWidth / 1920.0 if screenWidth else 1.0
+
+DEFAULT_LOGO = join(skin_path, 'ft.jpg')
+
+PLAYERS = [('4097', 'GStreamer')]
+if exists('/usr/lib/enigma2/python/Plugins/SystemPlugins/ServiceApp'):
+    PLAYERS.append(('5002', 'ExtePlayer3'))
+PLAYERS.append(('movie', 'MoviePlayer'))
+
+UPDATE_MODES = [('notify', _('Ask before installing')),
+                ('auto', _('Install automatically')),
+                ('off', _('Never check'))]
+
+TABS = [('top', _('Top')), ('fav', _('Favourites')), ('recent', _('Recent')),
+        ('near', _('Near you')), ('genres', _('Genres')), ('search', _('Search'))]
+
+COL_TAB = 0xb8a3dc
+COL_TAB_ACTIVE = 0xff4fb0
 
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1"}
+def S(v):
+    """Scale a 1920-based pixel value to the current resolution."""
+    return int(round(v * SCALE))
 
 
-def geturl(url):
-    try:
-        response = requests.get(url, headers=HEADERS, timeout=5)
-        return response.content
-    except Exception as e:
-        print("Error geturl: " + str(e))
-        return ''
+def fmt_time(seconds):
+    seconds = max(0, int(seconds))
+    return '%d:%02d' % (seconds // 60, seconds % 60)
 
 
-class radioList(MenuList):
-    def __init__(self, list):
-        MenuList.__init__(self, list, True, eListboxPythonMultiContent)
-
-        if screenWidth == 2560:
-            item_height = 50
-            font_size = 42
-        elif screenWidth == 1920:
-            item_height = 50
-            font_size = 38
-        else:
-            item_height = 40
-            font_size = 34
-
-        self.l.setItemHeight(item_height)
-        self.l.setFont(0, gFont('Regular', font_size))
+def station_key(rec):
+    return rec.get('id') or rec.get('url', '')
 
 
-def RListEntry(download):
-    res = [(download)]
-    col = 0xffffff
-    colsel = 0xf07655
-    pngx = join(skin_path, "folder.png")
-    if screenWidth == 2560:
-        icon_pos = (10, 6)
-        text_pos = (80, 0)
-        text_size = (800, 50)
-    elif screenWidth == 1920:
-        icon_pos = (10, 6)
-        text_pos = (60, 0)
-        text_size = (600, 50)
-    else:
-        icon_pos = (10, 6)
-        text_pos = (0, 0)
-        text_size = (400, 40)
-
-    res.append(
-        MultiContentEntryPixmapAlphaTest(
-            pos=icon_pos, size=(
-                35, 35), png=loadPNG(pngx)))
-    res.append(
-        MultiContentEntryText(
-            pos=text_pos,
-            size=text_size,
-            font=0,
-            text=download,
-            color=col,
-            color_sel=colsel,
-            flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-
-    return res
+def clean_rec(rec):
+    return dict((k, v) for k, v in rec.items() if not k.startswith('_'))
 
 
-def showlist(datal, list):
-    plist = []
-    for name in datal:
-        plist.append(RListEntry(name))
-    list.setList(plist)
+# --------------------------------------------------------------------------
+#  Settings
+# --------------------------------------------------------------------------
 
-
-def resizePoster(x, y, dwn_poster):
-    try:
-        from PIL import Image
-        with Image.open(dwn_poster) as img:
-            new_width = x
-            new_height = y
-            try:
-                rimg = img.resize((new_width, new_height), Image.LANCZOS)
-            except Exception:
-                rimg = img.resize((new_width, new_height), Image.ANTIALIAS)
-            rimg.save(dwn_poster)
-    except Exception as e:
-        print("ERROR resizePoster: " + str(e))
-
-
-def slugify(name):
-    return sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')
-
-
-def titlesong2(url):
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        r = requests.get(url, headers=headers, timeout=10)
-        return r.json()
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def titlesong(url):
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=10, verify=False)
-        data = r.json()
-
-        real_duration = data.get("track", {}).get("duration", 0)
-
-        if real_duration <= 0:
-            real_duration = 210
-
-        start_time = dt.strptime(
-            data.get(
-                "started_at", "")[
-                :19], "%Y-%m-%d %H:%M:%S")
-        end_time = dt.strptime(
-            data.get(
-                "ends_at", "")[
-                :19], "%Y-%m-%d %H:%M:%S")
-        timestamp_duration = int((end_time - start_time).total_seconds())
-
-        real_duration = timestamp_duration if 30 < timestamp_duration < 600 else real_duration
-        comeback = (
-            'Artist: ' + data.get("artist", {}).get("name", "") + '\n' +
-            'Title: ' + data.get("title", "") + '\n' +
-            'Duration: ' + str(real_duration) + ' sec'
-        )
-
-        return {
-            "comeback": comeback,
-            "duration": real_duration,
-            "title": data.get("title", ""),
-            "artist": data.get("artist", {}).get("name", "")
-        }
-
-    except Exception as e:
-        return {"error": str(e)}
-
-
-class radiom1(Screen):
-    def __init__(self, session):
-        skin = join(skin_path, 'radiom.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        Screen.__init__(self, session)
-        self.session = session
-        self.list = []
-        self['list'] = radioList([])
-        self['info'] = Label('HOME RADIO VIEW')
-        self['key_red'] = Button(_('Exit'))
-        self['key_green'] = Button(_('Select'))
-        self['key_yellow'] = Button(_('Update'))
-        self.currentList = 'list'
-        self["logo"] = Pixmap()
-        self["back"] = Pixmap()
-        self.picload = PicLoader()
-        global x, y
-        pic = skin_path + "/ft.jpg"
-        x = 430
-        y = 430
-        if screenWidth == 1920:
-            x = 340
-            y = 340
-        if screenWidth == 2560:
-            x = 640
-            y = 640
-        resizePoster(x, y, pic)
-        self.picload.setPara((x, y, sc[0], sc[1], 0, 1, "#00000000"))
-        self.picload.addCallback(self.showback)
-        self.picload.startDecode(pic)
-        self.Update = False
-        self['setupActions'] = ActionMap(
-            [
-                'OkCancelActions',
-                'DirectionActions',
-                'HotkeyActions',
-                'InfobarEPGActions',
-                'ChannelSelectBaseActions'
-            ],
-            {
-                'ok': self.okClicked,
-                'back': self.close,
-                'cancel': self.close,
-                'yellow': self.update_me,
-                'green': self.okClicked,
-                "up": self.up,
-                "down": self.down,
-                "left": self.left,
-                "right": self.right,
-                'yellow_long': self.update_dev,
-                'info_long': self.update_dev,
-                'infolong': self.update_dev,
-                'showEventInfoPlugin': self.update_dev,
-                'red': self.close
-            },
-            -1
-        )
-        self.timer = eTimer()
-        if exists('/var/lib/dpkg/status'):
-            self.timer_conn = self.timer.timeout.connect(self.check_vers)
-        else:
-            self.timer.callback.append(self.check_vers)
-        self.timer.start(500, 1)
-        self.onLayoutFinish.append(self.openTest)
-
-    def check_vers(self):
-        remote_version = '0.0'
-        remote_changelog = ''
-        req = Utils.Request(
-            Utils.b64decoder(installer_url), headers={
-                'User-Agent': 'Mozilla/5.0'})
-        page = Utils.urlopen(req).read()
-        if PY3:
-            data = page.decode("utf-8")
-        else:
-            data = page.encode("utf-8")
-        if data:
-            lines = data.split("\n")
-            for line in lines:
-                if line.startswith("version"):
-                    remote_version = line.split("=")
-                    remote_version = line.split("'")[1]
-                if line.startswith("changelog"):
-                    remote_changelog = line.split("=")
-                    remote_changelog = line.split("'")[1]
-                    break
-        self.new_version = remote_version
-        self.new_changelog = remote_changelog
-        if __version__ < remote_version:
-            self.Update = True
-            self['key_green'].show()
-            self.session.open(
-                MessageBox,
-                _('New version %s is available\n\nChangelog: %s\n\nPress info_long or yellow_long button to start force updating.') %
-                (self.new_version,
-                 self.new_changelog),
-                MessageBox.TYPE_INFO,
-                timeout=5)
-
-    def update_me(self):
-        if self.Update is True:
-            self.session.openWithCallback(
-                self.install_update,
-                MessageBox,
-                _("New version %s is available.\n\nChangelog: %s \n\nDo you want to install it now?") %
-                (self.new_version,
-                 self.new_changelog),
-                MessageBox.TYPE_YESNO)
-        else:
-            self.session.open(
-                MessageBox,
-                _("Congrats! You already have the latest version..."),
-                MessageBox.TYPE_INFO,
-                timeout=4)
-
-    def update_dev(self):
+class Settings(object):
+    def __init__(self):
+        self.data = {'favourites': [], 'recent': [], 'player': '4097',
+                     'last_search': '', 'update_mode': 'notify', 'location': None}
         try:
-            req = Utils.Request(
-                Utils.b64decoder(developer_url), headers={
-                    'User-Agent': 'Mozilla/5.0'})
-            page = Utils.urlopen(req).read()
-            data = json_loads(page)
-            remote_date = data['pushed_at']
-            strp_remote_date = dt.strptime(remote_date, '%Y-%m-%dT%H:%M:%SZ')
-            remote_date = strp_remote_date.strftime('%Y-%m-%d')
-            self.session.openWithCallback(
-                self.install_update,
-                MessageBox,
-                _("Do you want to install update ( %s ) now?") %
-                (remote_date),
-                MessageBox.TYPE_YESNO)
+            with codecs.open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                self.data.update(json.load(f))
+        except Exception:
+            pass
+
+    def save(self):
+        try:
+            with codecs.open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=1)
         except Exception as e:
-            print('error xcons: ' + str(e))
+            print('[RadioM] settings save error: %s' % e)
 
-    def install_update(self, answer=False):
-        if answer:
-            cmd1 = 'wget -q "--no-check-certificate" ' + \
-                Utils.b64decoder(installer_url) + ' -O - | /bin/sh'
-            self.session.open(
-                xConsole,
-                'Upgrading...',
-                cmdlist=[cmd1],
-                finishedCallback=self.myCallback,
-                closeOnSuccess=False)
-        else:
-            self.session.open(
-                MessageBox,
-                _("Update Aborted!"),
-                MessageBox.TYPE_INFO,
-                timeout=3)
+    def fav_keys(self):
+        return set(station_key(r) for r in self.data['favourites'])
 
-    def myCallback(self, result=None):
-        print('result: ' + str(result))
-        return
+    def is_fav(self, rec):
+        return station_key(rec) in self.fav_keys()
 
-    def openTest(self):
-        self.names = []
-        self.urls = []
-        self.pics = []
-        self.descriptions = []
+    def toggle_fav(self, rec):
+        key = station_key(rec)
+        favs = [r for r in self.data['favourites'] if station_key(r) != key]
+        added = len(favs) == len(self.data['favourites'])
+        if added:
+            favs.append(clean_rec(rec))
+        self.data['favourites'] = favs
+        self.save()
+        return added
 
-        all_stations = []
-        page = 1
-        while True:
-            api_url = f"https://api.laut.fm/stations?limit=50&page={page}&order=click&reverse=1"
-            try:
-                resp = requests.get(api_url, headers=HEADERS, timeout=10)
-                if resp.status_code != 200:
-                    break
-                data = resp.json()
-                stations = data if isinstance(
-                    data, list) else data.get(
-                    "stations", [])
-                if not stations:
-                    break
-                all_stations.extend(stations)
-                print(f"Page {page}: added {len(stations)} stations")
-                page += 1
-                if page > 50:
-                    print("Safety limit of 50 pages reached")
-                    break
-            except Exception as e:
-                print(f"Error: {e}")
-                break
+    def add_recent(self, rec):
+        key = station_key(rec)
+        recent = [r for r in self.data.get('recent', []) if station_key(r) != key]
+        recent.insert(0, clean_rec(rec))
+        self.data['recent'] = recent[:25]
+        self.save()
 
-        print(f"Total stations loaded: {len(all_stations)}")
 
-        for station in all_stations:
-            name = station.get("display_name") or station.get("name")
-            if name:
-                self.names.append(str(name))
-                self.urls.append(str(station.get("stream_url", "")))
-                pics = station.get("images", {})
-                pic_url = pics.get(
-                    "station_120x120", "") or pics.get(
-                    "station", "")
-                self.pics.append(pic_url if pic_url else skin_path + "/ft.jpg")
-                self.descriptions.append(station.get("description", ""))
+settings = Settings()
 
-        self.names.insert(0, 'PLAYLIST')
-        self.urls.insert(0, 'http://75.119.158.76:8090/radio.mp3')
-        self.pics.insert(0, skin_path + "/ft.jpg")
 
-        self.names.insert(1, 'RADIO CYRUS')
-        self.urls.insert(1, 'http://75.119.158.76:8090/radio.mp3')
-        self.pics.insert(1, skin_path + "/ft.jpg")
+# --------------------------------------------------------------------------
+#  Shared playback state (survives closing the player screen)
+# --------------------------------------------------------------------------
 
-        showlist(self.names, self['list'])
+class NowPlaying(object):
+    rec = None
+    sref_old = None
+    session = None
+    sleep_timer = None
+    sleep_end = 0
 
-    def okClicked(self):
-        idx = self['list'].getSelectionIndex()
-        if idx is None:
+    @classmethod
+    def play(cls, session, rec, player):
+        url = rec['url'].replace(':', '%3a').replace(' ', '%20')
+        stype = player if player in ('4097', '5002') else '4097'
+        ref = eServiceReference('%s:0:2:0:0:0:0:0:0:0:%s' % (stype, url))
+        ref.setName(rec['title'])
+        if cls.sref_old is None:
+            cls.sref_old = session.nav.getCurrentlyPlayingServiceReference()
+        session.nav.stopService()
+        session.nav.playService(ref)
+        cls.rec = rec
+        cls.session = session
+        settings.add_recent(rec)
+
+    @classmethod
+    def stop(cls, session):
+        if cls.rec is None:
             return
-        name = self.names[idx]
-        url = self.urls[idx]
-
-        print("Opening station: " + str(name))
-        print("Stream URL: " + str(url))
-
-        if 'PLAYLIST' in name:
-            self.session.open(radiom2)
-        elif 'RADIO CYRUS' in name:
-            self.session.open(Playstream2, name, url)
-        else:
-            pic = skin_path + "/ft.jpg"
-            api_url = "http://api.laut.fm/station/" + name.lower().replace(" ", "-")
-            print("API URL: " + api_url)
-            self.session.open(radiom80, name, url, pic, api_url)
-
-    def selectpic(self):
-        idx = self['list'].getSelectionIndex()
-        if idx is None:
-            return
-
-        pic = self.pics[idx]
-        print("Selected station image: " + str(pic))
-        if isinstance(pic, str) and pic.startswith('http'):
-            try:
-                local_path = self.download_image_to_cache(pic)
-                if local_path:
-                    pic = local_path
-                    print("Using downloaded image: " + pic)
-                else:
-                    pic = skin_path + "/ft.jpg"
-                    print("Using fallback image")
-            except BaseException:
-                pic = skin_path + "/ft.jpg"
-                print("Error downloading, using fallback")
-        else:
-            pic = skin_path + "/ft.jpg"
-
-        self.picload = PicLoader()
-        self.picload.setPara((x, y, sc[0], sc[1], 0, 1, "#00000000"))
-        self.picload.addCallback(self.showback)
-        self.picload.startDecode(pic)
-
-    def download_image_to_cache(self, image_url):
-        """Download the image and save it in the local cache"""
+        cls.rec = None
         try:
-            import hashlib
-            # Create a unique filename based on the URL
-            filename = hashlib.md5(
-                image_url.encode('utf-8')).hexdigest() + ".jpg"
-            cache_path = "/tmp/radiom_cache/"
-
-            # Create cache directory if it doesn't exist
-            from os import makedirs, path
-            if not path.exists(cache_path):
-                makedirs(cache_path)
-
-            local_file = cache_path + filename
-
-            # If the file already exists, use it
-            if exists(local_file):
-                return local_file
-
-            # Download the image
-            response = requests.get(image_url, timeout=10)
-            if response.status_code == 200:
-                with open(local_file, 'wb') as f:
-                    f.write(response.content)
-                return local_file
-
+            session.nav.stopService()
+            if cls.sref_old:
+                session.nav.playService(cls.sref_old)
         except Exception as e:
-            print("Error downloading image: " + str(e))
+            print('[RadioM] stop error: %s' % e)
+        cls.sref_old = None
+        cls.cancel_sleep()
 
-        return None
-
-    def showback(self, picInfo=None):
-        try:
-            ptr = self.picload.getData()
-            if ptr is not None:
-                self["logo"].instance.setPixmap(ptr)
-                self["logo"].instance.show()
-        except Exception as err:
-            self["logo"].instance.hide()
-            print("ERROR showImage: " + str(err))
-
-    def up(self):
-        self[self.currentList].up()
-        self.selectpic()
-
-    def down(self):
-        self[self.currentList].down()
-        self.selectpic()
-
-    def left(self):
-        self[self.currentList].pageUp()
-        self.selectpic()
-
-    def right(self):
-        self[self.currentList].pageDown()
-        self.selectpic()
-
-    def cancel(self):
-        Screen.close(self, False)
-
-
-class radiom2(Screen):
-    def __init__(self, session):
-        skin = join(skin_path, 'radiom.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        Screen.__init__(self, session)
-        self.list = []
-        self['list'] = radioList([])
-        self['info'] = Label()
-        self['info'].setText('UserList')
-        self['key_red'] = Button(_('Exit'))
-        self['key_green'] = Button(_('Select'))
-        self['key_yellow'] = Button()
-        self["logo"] = Pixmap()
-        self["back"] = Pixmap()
-        self["back"].hide()
-        self.picload = PicLoader()
-        pic = skin_path + "/ft.jpg"
-        x = 430
-        y = 430
-        if screenWidth == 1920:
-            x = 340
-            y = 340
-        if screenWidth == 2560:
-            x = 640
-            y = 640
-        resizePoster(x, y, pic)
-        self.picload.setPara((x, y, sc[0], sc[1], 0, 1, "#00000000"))
-        self.picload.addCallback(self.showback)
-        self.picload.startDecode(pic)
-        self['setupActions'] = ActionMap(
-            [
-                'SetupActions',
-                'ColorActions',
-                'TimerEditActions'
-            ],
-            {
-                "red": self.close,
-                "green": self.okClicked,
-                "cancel": self.cancel,
-                "ok": self.okClicked,
-            },
-            -2
-        )
-        self.onLayoutFinish.append(self.openTest)
-
-    def openTest(self):
-        uLists = THISPLUG + '/Playlists'
-        self.names = []
-        for root, dirs, files in walk(uLists):
-            for name in files:
-                if '.txt' in name:
-                    self.names.append(name)
-        showlist(self.names, self['list'])
-
-    def okClicked(self):
-        idx = self['list'].getSelectionIndex()
-        if idx is None:
-            return
-        name = self.names[idx]
-        self.session.open(radiom3, name)
-
-    def showback(self, picInfo=None):
-        try:
-            ptr = self.picload.getData()
-            if ptr is not None:
-                self["logo"].instance.setPixmap(ptr)
-                self["logo"].instance.show()
-        except Exception as err:
-            self["logo"].instance.hide()
-            print("ERROR showImage: " + str(err))
-
-    def cancel(self):
-        Screen.close(self, False)
-
-
-class radiom3(Screen):
-    def __init__(self, session, name):
-        skin = join(skin_path, 'radiom.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        Screen.__init__(self, session)
-        self.name = name
-        self.list = []
-        self['list'] = radioList([])
-        self['info'] = Label()
-        self['info'].setText(name)
-        self['key_red'] = Button(_('Exit'))
-        self['key_green'] = Button(_('Select'))
-        self['key_yellow'] = Button()
-        self["logo"] = Pixmap()
-        self["back"] = Pixmap()
-        self["back"].hide()
-        self.srefOld = self.session.nav.getCurrentlyPlayingServiceReference()
-        self.is_playing = False
-        self.picload = PicLoader()
-        pic = skin_path + "/ft.jpg"
-        x = 430
-        y = 430
-        if screenWidth == 1920:
-            x = 340
-            y = 340
-        if screenWidth == 2560:
-            x = 640
-            y = 640
-        resizePoster(x, y, pic)
-        self.picload.setPara((x, y, sc[0], sc[1], 0, 1, "#00000000"))
-        self.picload.addCallback(self.showback)
-        self.picload.startDecode(pic)
-
-        self['setupActions'] = ActionMap(
-            [
-                'SetupActions',
-                'ColorActions',
-                'TimerEditActions'
-            ],
-            {
-                "red": self.close,
-                "green": self.okClicked,
-                "cancel": self.cancel,
-                "ok": self.okClicked,
-            }, -2
-        )
-        self.onLayoutFinish.append(self.openTest)
-
-    def openTest(self):
-        uLists = THISPLUG + "/Playlists"
-        file1 = uLists + "/" + str(self.name)
-        print("Here in showContentA2 file1 = " + file1)
-        self.names = []
-        self.urls = []
-        try:
-            with open(file1, "r") as f1:
-                for line in f1:
-                    if "##" not in line:
-                        continue
-                    line = line.strip()
-                    items = line.split("###")
-                    if len(items) < 2:
-                        continue
-                    name = items[0]
-                    url = items[1]
-                    self.names.append(name)
-                    self.urls.append(url)
-                showlist(self.names, self['list'])
-        except Exception as e:
-            print("Error reading file: " + str(e))
-
-    def okClicked(self):
-        idx = self["list"].getSelectionIndex()
-        if idx is None:
-            return
-
-        name = self.names[idx]
-        url = self.urls[idx]
-
-        if self.is_playing:
-            self.stop()
-            return
-
-        url = url.replace(":", "%3a").replace(" ", "%20")
-        ref = "4097:0:1:0:0:0:0:0:0:0:" + str(url)
-        print("final reference:   " + ref)
-        sref = eServiceReference(ref)
-        sref.setName(name)
-        self.session.nav.stopService()
-        self.session.nav.playService(sref)
-        self.is_playing = True
-
-    def stop(self, text=''):
-        if self.is_playing:
-            try:
-                self.is_playing = False
-                self.session.nav.stopService()
-                self.session.nav.playService(self.srefOld)
-                return
-            except TypeError as e:
-                print(str(e))
-                self.close()
-
-    def showback(self, picInfo=None):
-        try:
-            ptr = self.picload.getData()
-            if ptr is not None:
-                self["logo"].instance.setPixmap(ptr)
-                self["logo"].instance.show()
-        except Exception as err:
-            self["logo"].instance.hide()
-            print("ERROR showImage: " + str(err))
-
-    def cancel(self):
-        self.stop()
-        Screen.close(self, False)
-
-
-class radiom80(Screen):
-    def __init__(self, session, name, stream_url, pic, api_url):
-        skin = join(skin_path, "radiom80.xml")
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        Screen.__init__(self, session)
-        self.session = session
-        self.name = name
-        self.pic = pic
-        self.stream_url = stream_url
-        self.api_url = api_url
-        self['list'] = radioList([])
-        self['info'] = Label()
-        self['info'].setText(name)
-        self['current_song'] = Label()
-        self['listeners'] = Label()
-        self['format'] = Label()
-        self['description'] = Label()
-        self['djs'] = Label()
-        self["logo"] = Pixmap()
-        self["back"] = Pixmap()
-        self["back"].hide()
-        self.player = '1'
-        self.picload = PicLoader()
-        global x, y
-        pic = pic.replace("\n", "").replace("\r", "")
-        x = 430
-        y = 430
-        if screenWidth == 1920:
-            x = 340
-            y = 340
-        if screenWidth == 2560:
-            x = 640
-            y = 640
-        resizePoster(x, y, pic)
-        self.picload.setPara((x, y, sc[0], sc[1], 0, 1, "#00000000"))
-        self.picload.addCallback(self.showback)
-        self.picload.startDecode(self.pic)
-        self.srefOld = self.session.nav.getCurrentlyPlayingServiceReference()
-        self.is_playing = False
-        self.cover_timer = eTimer()
-        if exists('/var/lib/dpkg/status'):
-            self.cover_timer_conn = self.cover_timer.timeout.connect(
-                self.countdown)
-        else:
-            self.cover_timer.callback.append(self.countdown)
-
-        self.current_artist = ""
-        self.current_title = ""
-        self.last_song_id = ""
-        self.okcoverdown = 'failed'
-
-        self.update_timer = eTimer()
-        if exists('/var/lib/dpkg/status'):
-            self.update_timer_conn = self.update_timer.timeout.connect(
-                self.countdown)
-        else:
-            self.update_timer.callback.append(self.countdown)
-        self.update_timer.start(10000, False)
-        self.last_cover_request = 0
-        self.song_start_time = time()
-        self.last_song_hash = ""
-        self.current_cover = ""
-        self.cover_timeout = 0
-        self.backing = ""
-        self.current_duration = 0
-
-        self['key_red'] = Button(_('Exit'))
-        self['key_blue'] = Label("Player 1-2-3")
-        self['key_green'] = Button(_('Select'))
-        self['key_green'].hide()
-        self["actions"] = ActionMap(["OkActions",
-                                     "SetupActions",
-                                     "ColorActions",
-                                     "EPGSelectActions",
-                                     "InfoActions",
-                                     "CancelActions"],
-                                    {"red": self.cancel,
-                                     "back": self.cancel,
-                                     "blue": self.typeplayer,
-                                     "green": self.openPlay,
-                                     "info": self.countdown,
-                                     "cancel": self.cancel,
-                                     "ok": self.openPlay,
-                                     },
-                                    -2)
-        self.onShow.append(self.openTest)
-
-    def typeplayer(self):
-        if self.player == "2":
-            self["key_blue"].setText("Player 3-2-1")
-            self.player = "3"
-        elif self.player == "1":
-            self["key_blue"].setText("Player 2-3-1")
-            self.player = "2"
-        else:
-            self["key_blue"].setText("Player 1-2-3")
-            self.player = "1"
-        return
-
-    def showback(self, picInfo=None):
-        try:
-            ptr = self.picload.getData()
-            if ptr is not None:
-                self["logo"].instance.setPixmap(ptr)
-                self["logo"].instance.show()
-        except Exception as err:
-            self["logo"].instance.hide()
-            print("ERROR showImage: " + str(err))
-
-    def showback2(self, picInfo=None):
-        try:
-            self["back"].instance.show()
-        except Exception as err:
-            self["back"].instance.hide()
-            print("ERROR showback2: " + str(err))
-
-    def selectpic(self):
-        try:
-            if hasattr(self, 'okcoverdown') and self.okcoverdown == 'success':
-                temp_path = '/tmp/artist_temp.jpg'
-                final_path = '/tmp/artist.jpg'
-
-                if exists(final_path):
-                    try:
-                        with Image.open(final_path) as img:
-                            if img.format != 'JPEG':
-                                img.convert('RGB').save(
-                                    temp_path, 'JPEG', quality=90)
-                                shutil.move(temp_path, final_path)
-                    except Exception as conv_err:
-                        print("Error conversion: " + str(conv_err))
-                        if exists(final_path):
-                            remove(final_path)
-                        return
-
-                if exists(final_path) and getsize(final_path) > 2048:
-                    x = self["logo"].instance.size().width()
-                    y = self["logo"].instance.size().height()
-                    self["logo"].instance.setPixmap(None)
-                    resizePoster(x, y, final_path)
-                    self.picload = PicLoader()
-                    self.picload.setPara(
-                        (x, y, sc[0], sc[1], 0, 1, "#FF000000"))
-
-                    def safe_callback(picInfo=None):
-                        try:
-                            ptr = self.picload.getData()
-                            if ptr:
-                                self["logo"].instance.setPixmap(ptr)
-                                self["logo"].instance.show()
-                        except Exception as e:
-                            print("Error callback: " + str(e))
-
-                    self.picload.addCallback(safe_callback)
-                    self.picload.startDecode(final_path)
-                else:
-                    print("Invalid or missing image file")
-
-        except Exception as err:
-            print("Error selectpic: " + str(err))
-            self.picload.startDecode(self.pic)
-
-    def getCover(self, url):
-        try:
-            temp_path = '/tmp/artist_temp.jpg'
-            final_path = '/tmp/artist.jpg'
-
-            with requests.get(url, stream=True, timeout=15) as r:
-                r.raise_for_status()
-                with open(temp_path, 'wb') as f:
-                    for chunk in r.iter_content(8192):
-                        f.write(chunk)
-
-            with Image.open(temp_path) as img:
-                img.verify()
-
-            shutil.move(temp_path, final_path)
-            return True
-
-        except Exception as e:
-            if exists(temp_path):
-                remove(temp_path)
-            print("Error getCover: " + str(e))
+    @classmethod
+    def is_playing(cls, rec=None):
+        if cls.rec is None:
             return False
+        return rec is None or station_key(rec) == station_key(cls.rec)
 
-    def downloadCover(self, title):
-        try:
-            self.okcoverdown = 'failed'
-            clean_title = sub(r'\([^)]*\)', '', title).strip()
-            search_query = self.current_artist + " " + \
-                clean_title if self.current_artist else clean_title
-            itunes_url = 'https://itunes.apple.com/search?term=' + \
-                quote(search_query) + '&entity=album&limit=1'
-            res = requests.get(itunes_url, timeout=10)
-            data = res.json()
-            if data.get('resultCount', 0) == 0:
-                # Fallback to song search
-                itunes_url = 'https://itunes.apple.com/search?term=' + \
-                    quote(search_query) + '&entity=song&limit=1'
-                res = requests.get(itunes_url, timeout=10)
-                data = res.json()
-
-            if data.get('resultCount', 0) > 0:
-                artwork_url = data['results'][0].get('artworkUrl100', '')
-                if artwork_url:
-                    artwork_url = artwork_url.replace('100x100bb', '600x600bb')
-                    if self.getCover(artwork_url):
-                        self.okcoverdown = 'success'
-        except Exception as e:
-            print("Error download: " + str(e))
-
-    def openTest(self):
-        self.timer = eTimer()
-        try:
-            self.timer_conn = self.timer.timeout.connect(self.loadPlaylist)
-        except BaseException:
-            self.timer.callback.append(self.loadPlaylist)
-        self.timer.start(250, True)
-
-    def loadPlaylist(self):
-        try:
-            # Build the name as in the API (lowercase, hyphens, already passed
-            # in self.name)
-            station_name = self.name.lower().replace(" ", "-")
-
-            # 1) General station data
-            station_url = f"https://api.laut.fm/station/{station_name}"
-            data_station = titlesong2(station_url)
-            if "error" in data_station:
-                print("Station error:", data_station["error"])
-                return
-
-            display_name = data_station.get("display_name", self.name)
-            stream_url = data_station.get("stream_url", "")
-            listeners = data_station.get("listeners", 0)
-            fmt = data_station.get("format", "")
-            description = data_station.get("description", "")
-            djs = data_station.get("djs", "")
-
-            # 2) Current song
-            song_url = f"https://api.laut.fm/station/{station_name}/current_song"
-            data_song = titlesong2(song_url)
-            if "error" in data_song:
-                current_song = _("No song")
-            else:
-                artist = data_song.get("artist", {}).get("name", "")
-                title = data_song.get("title", "")
-                current_song = f"{artist} - {title}".strip(" -")
-                if not current_song:
-                    current_song = _("Unknown")
-
-                # Update cover if changed
-                if hasattr(
-                        self,
-                        'last_song') and self.last_song != current_song:
-                    self.downloadCover(current_song)
-                    self.selectpic()
-                elif not hasattr(self, 'last_song'):
-                    self.downloadCover(current_song)
-                    self.selectpic()
-                self.last_song = current_song
-
-            # Update widgets
-            self['current_song'].setText(current_song)
-            self['listeners'].setText(_('Online: ') + str(listeners))
-            self['format'].setText(fmt)
-            self['description'].setText(description)
-            self['djs'].setText(_('Dj: ') + str(djs))
-
-            self.names = [display_name]
-            self.urls = [stream_url]
-            self['info'].setText(_('Select and Play'))
-            self['key_green'].show()
-            showlist(self.names, self['list'])
-
-        except Exception as e:
-            print("Error in loadPlaylist:", e)
-            import traceback
-            traceback.print_exc()
-
-    def countdown(self):
-        try:
-            if not self.backing:
-                print("No URLs set for songs")
-                return
-
-            data = titlesong(self.backing)
-            if "error" in data:
-                print("API Error: " + data["error"])
-                return
-
-            current_id = data['artist'] + "-" + data['title']
-            if self.last_song_id != current_id:
-                self['current_song'].setText(data["comeback"])
-                self.downloadCover(data['artist'] + " " + data['title'])
-                self.selectpic()
-                self.last_song_id = current_id
-
-            remaining = data["duration"] - (time() - self.song_start_time)
-            if remaining > 0:
-                self.cover_timer.start(int(remaining * 1000), False)
-            else:
-                self.song_start_time = time()
-                self.cover_timer.start(1000, False)
-
-        except Exception as e:
-            print("Error countdown: " + str(e))
-
-    def openTest2(self):
-        print('duration mmm: ' + str(self.duration))
-        print(type(self.duration))
-        if self.duration > 0:
-            duration_seconds = int(self.duration)
-            print("Timer in sec: " + str(duration_seconds))
-            self.timer = eTimer()
-            try:
-                self.timer_conn = self.timer.timeout.connect(self.countdown)
-            except BaseException:
-                self.timer.callback.append(self.countdown)
-            self.timer.start(duration_seconds * 1000, False)
-
-    def openPlay(self):
-        idx = self["list"].getSelectionIndex()
-        if idx is None:
+    @classmethod
+    def set_sleep(cls, minutes):
+        cls.cancel_sleep()
+        if not minutes:
             return
-        self.showback2()
-        name = self.names[idx]
-        url = self.urls[idx]
-        if self.is_playing:
-            self.stop()
+        cls.sleep_timer = make_timer(cls._sleep_fire)
+        cls.sleep_timer.start(minutes * 60 * 1000, True)
+        cls.sleep_end = time() + minutes * 60
+
+    @classmethod
+    def cancel_sleep(cls):
+        if cls.sleep_timer:
+            cls.sleep_timer.stop()
+        cls.sleep_timer = None
+        cls.sleep_end = 0
+
+    @classmethod
+    def _sleep_fire(cls):
+        print('[RadioM] sleep timer expired')
+        if cls.session:
+            cls.stop(cls.session)
+
+
+# --------------------------------------------------------------------------
+#  Helpers for screens
+# --------------------------------------------------------------------------
+
+def load_skin(name):
+    with codecs.open(join(skin_path, name), 'r', encoding='utf-8') as f:
+        return f.read()
+
+
+def make_timer(callback):
+    t = eTimer()
+    try:
+        t._conn = t.timeout.connect(callback)
+    except AttributeError:
+        t.callback.append(callback)
+    return t
+
+
+def set_color(label, rgb):
+    try:
+        label.instance.setForegroundColor(gRGB(rgb))
+        label.instance.invalidate()
+    except Exception:
+        pass
+
+
+class ImageWidget(object):
+    """Async decode of a file into a Pixmap widget."""
+
+    def __init__(self, widget):
+        self.widget = widget
+        self.loader = PicLoader()
+        self.loader.addCallback(self._done)
+        self.current = None
+
+    def show(self, path):
+        if not path or not exists(path) or path == self.current:
             return
+        inst = self.widget.instance
+        if inst is None:
+            return
+        self.current = path
+        size = inst.size()
+        self.loader.setPara((size.width(), size.height(), sc[0], sc[1], False, 1, '#00000000'))
+        self.loader.startDecode(path)
+
+    def _done(self, info=None):
         try:
-            if self.player == "2":
-                self.session.open(Playstream2, name, self.stream_url)
+            ptr = self.loader.getData()
+            if ptr is not None and self.widget.instance:
+                self.widget.instance.setPixmap(ptr)
+                self.widget.show()
+        except Exception as e:
+            print('[RadioM] image error: %s' % e)
+
+
+class StationList(MenuList):
+    def __init__(self):
+        MenuList.__init__(self, [], True, eListboxPythonMultiContent)
+        self.l.setItemHeight(S(86))
+        self.l.setFont(0, gFont('Regular', S(34)))
+        self.l.setFont(1, gFont('Regular', S(25)))
+        self.l.setFont(2, gFont('Regular', S(21)))
+        self.icons = dict((k, loadPNG(join(skin_path, 'ic_%s.png' % k)))
+                          for k in ('fav', 'radio', 'play', 'genre', 'genre_top'))
+        self.width = S(1120)
+
+    def _row(self, rec, icon, title, subtitle, big='', small=''):
+        w, h = self.width, S(86)
+        res = [rec,
+               MultiContentEntryPixmapAlphaBlend(
+                   pos=(S(14), (h - S(44)) // 2), size=(S(44), S(44)), png=icon),
+               MultiContentEntryText(
+                   pos=(S(78), S(8)), size=(w - S(260), S(42)), font=0,
+                   text=title, color=0xffffff, color_sel=0xffffff,
+                   flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER),
+               MultiContentEntryText(
+                   pos=(S(78), S(48)), size=(w - S(260), S(32)), font=1,
+                   text=subtitle, color=0xb8a3dc, color_sel=0xf3e8ff,
+                   flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER)]
+        if big:
+            res.append(MultiContentEntryText(
+                pos=(w - S(170), S(10)), size=(S(150), S(40)), font=0,
+                text=big, color=0xff4fb0, color_sel=0xffffff,
+                flags=RT_HALIGN_RIGHT | RT_VALIGN_CENTER))
+            res.append(MultiContentEntryText(
+                pos=(w - S(170), S(48)), size=(S(150), S(30)), font=2,
+                text=small, color=0x8f7bb0, color_sel=0xf3e8ff,
+                flags=RT_HALIGN_RIGHT | RT_VALIGN_CENTER))
+        return res
+
+    def build_station(self, rec, fav):
+        if NowPlaying.is_playing(rec):
+            icon = self.icons['play']
+        elif fav:
+            icon = self.icons['fav']
+        else:
+            icon = self.icons['radio']
+        parts = []
+        if rec.get('_dist') is not None:
+            parts.append('%d km' % rec['_dist'])
+        if rec.get('genres'):
+            parts.append(', '.join(rec['genres'][:3]))
+        if rec.get('location'):
+            parts.append(rec['location'])
+        if not parts:
+            parts.append(rec.get('desc') or rec.get('url', ''))
+        big = small = ''
+        if rec.get('src') == 'laut':
+            big, small = str(rec.get('listeners', 0)), _('listeners')
+        return self._row(rec, icon, rec['title'], '  ·  '.join(parts), big, small)
+
+    def build_genre(self, rec):
+        icon = self.icons['genre_top'] if rec.get('top') else self.icons['genre']
+        sub = _('Top genre on laut.fm') if rec.get('top') else (rec.get('example') or '')
+        return self._row(rec, icon, rec['genre'], sub, str(rec['count']), _('stations'))
+
+    def fill(self, items, kind='stations'):
+        if kind == 'genres':
+            self.setList([self.build_genre(r) for r in items])
+        else:
+            favs = settings.fav_keys()
+            self.setList([self.build_station(r, station_key(r) in favs) for r in items])
+
+
+# --------------------------------------------------------------------------
+#  Update helpers (shared by main and about screens)
+# --------------------------------------------------------------------------
+
+def start_update(session, info, status=None):
+    """Install a release found by updater.check_latest()."""
+    if status:
+        status(_('Downloading RadioM %s from GitHub...') % info['version'])
+
+    def done(result):
+        ok, msg = result
+        if ok:
+            if status:
+                status(_('RadioM %s installed') % info['version'])
+            session.openWithCallback(
+                restart_gui, MessageBox,
+                _('RadioM %s has been installed.\n\nRestart the GUI now to use it?') % info['version'],
+                MessageBox.TYPE_YESNO)
+        else:
+            if status:
+                status(_('Update failed'))
+            session.open(MessageBox, _('Update failed:\n%s') % msg, MessageBox.TYPE_ERROR)
+    threads.deferToThread(updater.install_tarball, info['tarball']).addCallback(done)
+
+
+def restart_gui(answer):
+    if answer:
+        try:
+            from Screens.Standby import TryQuitMainloop
+            NowPlaying.session.open(TryQuitMainloop, 3)
+        except Exception as e:
+            print('[RadioM] restart error: %s' % e)
+
+
+# --------------------------------------------------------------------------
+#  Main screen
+# --------------------------------------------------------------------------
+
+class RadioMMain(Screen):
+
+    def __init__(self, session):
+        self.skin = load_skin('radiom.xml')
+        Screen.__init__(self, session)
+        self.setTitle('RadioM')
+        NowPlaying.session = session
+        self.all_stations = []
+        self.by_id = {}
+        self.view = []
+        self.kind = 'stations'
+        self.tab = 'top'
+        self.sub = None              # ('genre', name) | ('search', text) | ('file', name)
+        self.sub_results = []
+        self.genre_back_index = 0
+        self.near_results = None
+        self.alive = True
+        self.loading = False
+        self.update_info = None
+
+        self['list'] = StationList()
+        self['logo'] = Pixmap()
+        for i, (key, label) in enumerate(TABS):
+            self['tab_' + key] = Label('%d %s' % (i + 1, label))
+        self['mode'] = Label('')
+        self['status'] = Label(_('Loading stations...'))
+        self['nowplaying'] = Label('')
+        self['st_name'] = Label('')
+        self['st_genres'] = Label('')
+        self['st_meta'] = Label('')
+        self['st_desc'] = Label('')
+        self['st_listeners'] = Label('')
+        self['key_red'] = Label(_('Exit'))
+        self['key_green'] = Label(_('Play'))
+        self['key_yellow'] = Label(_('Favourite'))
+        self['key_blue'] = Label(_('Next section'))
+        self['key_menu'] = Label(_('Menu'))
+        self['key_about'] = Label(_('About'))
+
+        self.logo = ImageWidget(self['logo'])
+        self.logo_timer = make_timer(self.load_logo)
+
+        actions = {
+            'ok': self.key_ok,
+            'green': self.key_ok,
+            'cancel': self.exit,
+            'red': self.exit,
+            'yellow': self.toggle_fav,
+            'blue': self.next_tab,
+            'menu': self.open_menu,
+            'up': self.key_up,
+            'down': self.key_down,
+            'left': self.key_left,
+            'right': self.key_right,
+            'nextBouquet': self.key_left,
+            'prevBouquet': self.key_right,
+            '0': self.open_about,
+        }
+        for i, (key, _label) in enumerate(TABS):
+            actions[str(i + 1)] = (lambda k=key: self.set_tab(k))
+        self['actions'] = ActionMap(
+            ['OkCancelActions', 'ColorActions', 'DirectionActions', 'MenuActions',
+             'ChannelSelectBaseActions', 'NumberActions'],
+            actions, -1)
+        # INFO is mapped differently on OpenPLi / OpenATV / DreamOS images
+        self['infoActions'] = ActionMap(
+            ['EPGSelectActions', 'InfobarEPGActions', 'InfoActions'],
+            {'info': self.show_details,
+             'showEventInfo': self.show_details,
+             'showEventInfoPlugin': self.show_details,
+             'showEventInfoSingleEPG': self.show_details}, -1)
+        self.last_info = 0
+        self.onLayoutFinish.append(self.start)
+
+    # ---------------------------------------------------------------- start
+    def start(self):
+        L.reset_log()
+        self.logo.show(DEFAULT_LOGO)
+        ts, lts, cached = L.load_cache()
+        now = time()
+        if cached:
+            self.set_stations(cached)
+        self.apply_view()
+        if not cached or now - ts > L.CACHE_TTL:
+            self.reload_stations()
+        elif now - lts > L.LISTENERS_TTL:
+            self.refresh_listeners()
+        if settings.data.get('update_mode', 'notify') != 'off':
+            threads.deferToThread(updater.check_latest).addCallback(self._update_checked)
+
+    def set_stations(self, stations):
+        self.all_stations = stations
+        self.by_id = dict((r['id'], r) for r in stations)
+
+    def reload_stations(self):
+        if self.loading:
+            return
+        self.loading = True
+        self.show_partial = not self.all_stations    # nothing cached: fill the list while loading
+        self['status'].setText(_('Downloading station list...'))
+
+        def progress(part):
+            reactor.callFromThread(self._stations_partial, part)
+        d = threads.deferToThread(L.fetch_all_stations, progress=progress)
+        d.addCallback(self._stations_done)
+        d.addErrback(self._load_error)
+
+    def _stations_partial(self, part):
+        if not self.alive or not self.loading or not self.show_partial or not part:
+            return
+        self.set_stations(part)
+        if self.tab == 'top' and not self.sub:
+            self.apply_view(keep_selection=True)
+        self['status'].setText(_('Loading stations... %d') % len(part))
+
+    def _stations_done(self, stations):
+        self.loading = False
+        if not self.alive:
+            return
+        if stations:
+            L.save_cache(stations)
+            self.set_stations(stations)
+            self.near_results = None
+            if self.tab == 'near':
+                self.load_near()
+            self.apply_view(keep_selection=True)
+        elif not self.all_stations:
+            self.apply_view()
+            self['status'].setText(_('No stations (%s). Details in %s') % (L.LAST_ERROR or '?', L.LOG_FILE))
+
+    def _load_error(self, failure):
+        self.loading = False
+        L.log('station list failed: %s' % failure.getErrorMessage())
+        if self.alive:
+            self.apply_view()
+            self['status'].setText(_('Network error (%s). Details in %s') % (failure.getErrorMessage()[:60], L.LOG_FILE))
+
+    def refresh_listeners(self):
+        stations = list(self.all_stations)
+
+        def done(result):
+            if self.alive and result:
+                ts, _lts, _old = L.load_cache()
+                L.save_cache(result, ts=ts)
+                self.set_stations(result)
+                if self.tab == 'top' and not self.sub:
+                    self.apply_view(keep_selection=True)
+        threads.deferToThread(lambda: L.apply_listeners(stations, L.fetch_listeners())).addCallback(done).addErrback(
+            lambda f: print('[RadioM] listeners: %s' % f))
+
+    # ----------------------------------------------------------------- tabs
+    def set_tab(self, tab):
+        if tab == self.tab and not self.sub and tab != 'search':
+            return
+        self.tab = tab
+        self.sub = None
+        self['list'].moveToIndex(0)
+        if tab == 'near' and self.near_results is None:
+            self.load_near()
+        self.apply_view()
+        if tab == 'search':
+            self.ask_search()
+
+    def next_tab(self):
+        keys = [k for k, _l in TABS]
+        self.set_tab(keys[(keys.index(self.tab) + 1) % len(keys)])
+
+    def update_tabs(self):
+        for key, _label in TABS:
+            set_color(self['tab_' + key], COL_TAB_ACTIVE if key == self.tab else COL_TAB)
+
+    # ----------------------------------------------------------------- view
+    def genre_rows(self):
+        counts, example = {}, {}
+        for r in self.all_stations:
+            for g in r.get('genres', []):
+                counts[g] = counts.get(g, 0) + 1
+                example.setdefault(g, r)
+        rows = []
+        lower = dict((g.lower(), g) for g in counts)
+        for g in L.TOP_GENRES:
+            real = lower.get(g.lower(), g)
+            first = example.get(real, {})
+            rows.append({'genre': real, 'count': counts.get(real, 0), 'top': True,
+                         'logo': first.get('logo', ''), 'example': first.get('title', '')})
+        top_lower = set(g.lower() for g in L.TOP_GENRES)
+        rest = [(g, n) for g, n in counts.items() if g.lower() not in top_lower and n >= 2]
+        rest.sort(key=lambda kv: (-kv[1], kv[0].lower()))
+        for g, n in rest:
+            first = example.get(g, {})
+            rows.append({'genre': g, 'count': n, 'top': False, 'logo': first.get('logo', ''),
+                         'example': _('e.g. %s') % first.get('title', '') if first else ''})
+        return rows
+
+    def apply_view(self, keep_selection=False):
+        current = self.selected() if keep_selection else None
+        kind, status = 'stations', ''
+        if self.sub:
+            t, arg = self.sub
+            view = self.sub_results
+            title = {'genre': _('Genre: %s'), 'search': _('Search: "%s"'),
+                     'file': _('Playlist: %s')}[t] % arg.replace('.txt', '')
+            if not view:
+                status = _('Nothing found')
+        elif self.tab == 'fav':
+            view, title = list(settings.data['favourites']), _('Your favourites')
+            if not view:
+                status = _('No favourites yet: press YELLOW on a station')
+        elif self.tab == 'recent':
+            view, title = list(settings.data.get('recent', [])), _('Recently played stations')
+            if not view:
+                status = _('Nothing played yet')
+        elif self.tab == 'near':
+            loc = settings.data.get('location') or {}
+            view = self.near_results or []
+            title = _('Near %s') % loc['city'] if loc.get('city') else _('Stations near you')
+            if self.near_results is None:
+                status = _('Finding your position...')
+            elif not view:
+                status = _('No stations with a position near you')
+        elif self.tab == 'genres':
+            kind, view, title = 'genres', self.genre_rows(), _('All genres')
+        elif self.tab == 'search':
+            view, title = [], _('Search')
+            status = _('Press OK to search stations, artists, genres, cities')
+        else:
+            view, title = self.all_stations, _('Top stations')
+        if self.loading and not view:
+            status = _('Downloading station list...')
+        self.view, self.kind = view, kind
+        self['mode'].setText('%s  ·  %d' % (title, len(view)) if view else title)
+        self['list'].fill(view, kind)
+        if current:
+            key = current.get('genre') or station_key(current)
+            for i, r in enumerate(view):
+                if (r.get('genre') or station_key(r)) == key:
+                    self['list'].moveToIndex(i)
+                    break
+        self['status'].setText(status)
+        self.update_tabs()
+        self.update_nowplaying()
+        self.selection_changed()
+
+    def update_nowplaying(self):
+        self['nowplaying'].setText('♫  ' + NowPlaying.rec['title'] if NowPlaying.rec else '')
+
+    def selected(self):
+        idx = self['list'].getSelectionIndex()
+        if idx is None or idx < 0 or idx >= len(self.view):
+            return None
+        return self.view[idx]
+
+    def selection_changed(self):
+        rec = self.selected()
+        if not rec:
+            for k in ('st_name', 'st_genres', 'st_meta', 'st_desc', 'st_listeners'):
+                self[k].setText('')
+            self['key_green'].setText(_('Search') if self.tab == 'search' else '')
+            self['key_yellow'].setText('')
+            self.logo_timer.start(350, True)
+            return
+        if self.kind == 'genres':
+            self['st_name'].setText(rec['genre'])
+            self['st_genres'].setText(_('Top genre') if rec.get('top') else _('Genre'))
+            self['st_meta'].setText(_('%d stations in the list') % rec['count'])
+            self['st_desc'].setText(_('Press OK to see all the stations of this genre, also the ones not in the top list.'))
+            self['st_listeners'].setText('')
+            self['key_green'].setText(_('Open'))
+            self['key_yellow'].setText('')
+        else:
+            self['st_name'].setText(rec['title'])
+            self['st_genres'].setText(', '.join(rec.get('genres', [])))
+            meta = [x for x in (('%d km' % rec['_dist']) if rec.get('_dist') is not None else '',
+                                rec.get('location'),
+                                ('DJ ' + rec['djs']) if rec.get('djs') else '') if x]
+            self['st_meta'].setText('  ·  '.join(meta))
+            desc = rec.get('format') or ''
+            if rec.get('desc') and rec['desc'] != desc:
+                desc = (desc + '\n' + rec['desc']).strip()
+            self['st_desc'].setText(desc)
+            if rec.get('src') == 'laut':
+                self['st_listeners'].setText(_('%d listening now') % rec.get('listeners', 0))
             else:
-                url = self.stream_url.replace(":", "%3a").replace(" ", "%20")
-                if self.player == "3":
-                    ref = "4097:0:1:0:0:0:0:0:0:0:" + str(url)
-                else:
-                    ref = "4097:0:2:0:0:0:0:0:0:0:" + str(url)
+                self['st_listeners'].setText(_('Custom stream'))
+            self['key_green'].setText(_('Play'))
+            self['key_yellow'].setText(_('Remove fav.') if settings.is_fav(rec) else _('Favourite'))
+        # debounce: download the logo only when the cursor stops
+        self.logo_timer.start(350, True)
 
-                print("Final reference: " + ref)
-                sref = eServiceReference(ref)
-                sref.setName(name)
-                self.session.nav.stopService()
-                self.session.nav.playService(sref)
-                self.is_playing = True
-                self.countdown()
-                self.update_timer.start(1000, False)
-        except Exception as e:
-            print("Error during playback: " + str(e))
+    def load_logo(self):
+        rec = self.selected()
+        url = rec.get('logo') if rec else ''
+        if not url:
+            self.logo.show(DEFAULT_LOGO)
+            return
 
-    def listener(self, urlx):
-        content = None
-        try:
-            referer = "https://laut.fm"
-            raw = Utils.ReadUrl2(urlx, referer)
-            content = json_loads(raw)
-        except Exception as e:
-            print("err: " + str(e))
-        return content
+        def done(path):
+            cur = self.selected()
+            if self.alive and cur and cur.get('logo') == url:
+                self.logo.show(path or DEFAULT_LOGO)
+        threads.deferToThread(L.download_logo, url).addCallback(done)
 
-    def cancel(self):
-        self.stop()
+    def key_up(self):
+        self['list'].up()
+        self.selection_changed()
+
+    def key_down(self):
+        self['list'].down()
+        self.selection_changed()
+
+    def key_left(self):
+        self['list'].pageUp()
+        self.selection_changed()
+
+    def key_right(self):
+        self['list'].pageDown()
+        self.selection_changed()
+
+    # ------------------------------------------------------- genres/search
+    def open_genre(self, genre):
+        self.genre_back_index = self['list'].getSelectionIndex()
+        g = genre.lower()
+        local = [r for r in self.all_stations if g in [x.lower() for x in r.get('genres', [])]]
+        self.sub, self.sub_results = ('genre', genre), local
+        self['list'].moveToIndex(0)
+        self.apply_view()
+        self['status'].setText(_('Loading more stations from laut.fm...'))
+
+        def done(online):
+            if not self.alive or self.sub != ('genre', genre):
+                return
+            merged = self.merge(online, local)
+            merged.sort(key=lambda r: (-r.get('listeners', 0), r['title'].lower()))
+            self.sub_results = merged
+            self.apply_view(keep_selection=True)
+
+        def fail(f):
+            print('[RadioM] genre: %s' % f)
+            if self.alive and self.sub == ('genre', genre):
+                self['status'].setText('' if local else _('Nothing found'))
+        threads.deferToThread(L.stations_by_genre, genre, self.by_id).addCallback(done).addErrback(fail)
+
+    def merge(self, first, second):
+        out, seen = [], set()
+        for r in list(first) + list(second):
+            k = station_key(r)
+            if k not in seen:
+                seen.add(k)
+                out.append(r)
+        return out
+
+    def ask_search(self):
+        self.session.openWithCallback(
+            self.search_done, VirtualKeyBoard,
+            title=_('Search: station, artist, genre, city...'),
+            text=settings.data.get('last_search', ''))
+
+    def search_done(self, text):
+        if text is None:
+            return
+        text = text.strip()
+        if not text:
+            return
+        settings.data['last_search'] = text
+        settings.save()
+        ql = text.lower()
+        local = [r for r in self.all_stations if ql in (
+            r['title'] + ' ' + r['id'] + ' ' + ' '.join(r.get('genres', [])) + ' ' +
+            r.get('format', '') + ' ' + r.get('desc', '') + ' ' + r.get('location', '') + ' ' +
+            r.get('djs', '')).lower()]
+        self.tab = 'search'
+        self.sub, self.sub_results = ('search', text), local
+        self['list'].moveToIndex(0)
+        self.apply_view()
+        self['status'].setText(_('Searching on laut.fm...'))
+
+        def done(online):
+            if not self.alive or self.sub != ('search', text):
+                return
+            self.sub_results = self.merge(online, local)
+            self.apply_view(keep_selection=True)
+
+        def fail(f):
+            print('[RadioM] search: %s' % f)
+            if self.alive and self.sub == ('search', text):
+                self['status'].setText(_('Online search not available, local results only') if local else _('Nothing found'))
+        threads.deferToThread(L.search_stations, text, self.by_id).addCallback(done).addErrback(fail)
+
+    def load_near(self, refresh=False):
+        stations = list(self.all_stations)
+        loc = settings.data.get('location')
+
+        def work():
+            location = loc if (loc and not refresh) else L.get_location()
+            if not location:
+                return None, []
+            return location, L.stations_near(stations, location)
+
+        def done(result):
+            location, near = result
+            if location:
+                settings.data['location'] = location
+                settings.save()
+            self.near_results = near
+            if self.alive and self.tab == 'near' and not self.sub:
+                self.apply_view()
+                if not location:
+                    self['status'].setText(_('Position not available'))
+        threads.deferToThread(work).addCallback(done)
+
+    # -------------------------------------------------------------- actions
+    def key_ok(self):
+        rec = self.selected()
+        if self.kind == 'genres':
+            if rec:
+                self.open_genre(rec['genre'])
+            return
+        if not rec:
+            if self.tab == 'search':
+                self.ask_search()
+            return
+        if settings.data.get('player') == 'movie':
+            NowPlaying.stop(self.session)
+            settings.add_recent(rec)
+            self.session.open(Playstream2, rec['title'], rec['url'])
+            return
+        idx = self['list'].getSelectionIndex()
+        self.session.openWithCallback(self.player_closed, RadioMPlayer, self.view, idx)
+
+    def player_closed(self, index=None):
+        if self.tab == 'recent' and not self.sub:
+            self.view = list(settings.data.get('recent', []))
+        self['list'].fill(self.view, self.kind)
+        if index is not None and 0 <= index < len(self.view):
+            self['list'].moveToIndex(index)
+        self.update_nowplaying()
+        self.selection_changed()
+
+    def toggle_fav(self):
+        rec = self.selected()
+        if not rec or self.kind == 'genres':
+            return
+        added = settings.toggle_fav(rec)
+        idx = self['list'].getSelectionIndex()
+        if self.tab == 'fav' and not self.sub:
+            self.apply_view()
+        else:
+            self['list'].fill(self.view, self.kind)
+            self['list'].moveToIndex(idx)
+            self.selection_changed()
+        self['status'].setText(_('Added to favourites') if added else _('Removed from favourites'))
+
+    def show_details(self):
+        if time() - self.last_info < 1:
+            return      # same key delivered by two contexts
+        self.last_info = time()
+        rec = self.selected()
+        if not rec:
+            return
+        if self.kind == 'genres':
+            self.session.open(MessageBox, '%s\n\n%s' % (rec['genre'], _('%d stations in the list') % rec['count']),
+                              MessageBox.TYPE_INFO)
+            return
+        lines = [rec['title'], '']
+        for label, key in ((_('Genres'), 'genres'), (_('Format'), 'format'),
+                           (_('Description'), 'desc'), (_('Location'), 'location'),
+                           (_('DJ'), 'djs')):
+            val = rec.get(key)
+            if isinstance(val, list):
+                val = ', '.join(val)
+            if val:
+                lines.append('%s: %s' % (label, val))
+        if rec.get('src') == 'laut':
+            lines.append('%s: %d' % (_('Listeners now'), rec.get('listeners', 0)))
+            lines.append('%s: https://laut.fm/%s' % (_('Page'), rec['id']))
+        lines.append('%s: %s' % (_('Stream'), rec['url']))
+        self.session.open(MessageBox, '\n'.join(lines), MessageBox.TYPE_INFO)
+
+    def open_menu(self):
+        menu = [
+            (_('Search'), 'search'),
+            (_('Genres'), 'genres'),
+            (_('Local playlists'), 'files'),
+            (_('Update my position (Near you)'), 'location'),
+            (_('Player: %s') % dict(PLAYERS).get(settings.data.get('player'), 'GStreamer'), 'player'),
+            (_('Reload station list'), 'reload'),
+            (_('About, updates and donations'), 'about'),
+        ]
+        if NowPlaying.rec:
+            menu.insert(0, (_('Stop playback'), 'stop'))
+        if self.update_info and updater.is_newer(self.update_info['version']):
+            menu.insert(0, (_('Install update %s') % self.update_info['version'], 'update'))
+        self.session.openWithCallback(self.menu_done, ChoiceBox, title=_('RadioM menu'), list=menu)
+
+    def menu_done(self, choice):
+        if not choice:
+            return
+        action = choice[1]
+        if action == 'search':
+            self.set_tab('search')
+        elif action == 'genres':
+            self.set_tab('genres')
+        elif action == 'files':
+            files = sorted(f for f in listdir(PLAYLISTS) if f.endswith('.txt')) if exists(PLAYLISTS) else []
+            if not files:
+                self.session.open(MessageBox, _('No .txt playlist in %s') % PLAYLISTS, MessageBox.TYPE_INFO, timeout=5)
+                return
+            self.session.openWithCallback(
+                self.file_done, ChoiceBox, title=_('Local playlists'),
+                list=[(f.replace('.txt', ''), f) for f in files])
+        elif action == 'location':
+            self.tab, self.sub, self.near_results = 'near', None, None
+            self.apply_view()
+            self.load_near(refresh=True)
+        elif action == 'player':
+            keys = [p[0] for p in PLAYERS]
+            cur = settings.data.get('player', '4097')
+            nxt = keys[(keys.index(cur) + 1) % len(keys)] if cur in keys else keys[0]
+            settings.data['player'] = nxt
+            settings.save()
+            self['status'].setText(_('Player: %s') % dict(PLAYERS)[nxt])
+        elif action == 'reload':
+            self.reload_stations()
+        elif action == 'stop':
+            NowPlaying.stop(self.session)
+            self.player_closed(self['list'].getSelectionIndex())
+        elif action == 'about':
+            self.open_about()
+        elif action == 'update':
+            start_update(self.session, self.update_info, self['status'].setText)
+
+    def file_done(self, choice):
+        if choice:
+            self.sub = ('file', choice[1])
+            self.sub_results = L.read_txt_playlist(PLAYLISTS, choice[1])
+            self['list'].moveToIndex(0)
+            self.apply_view()
+
+    def open_about(self):
+        self.session.open(RadioMAbout, self.update_info)
+
+    def exit(self):
+        if self.sub:
+            back_to_genres = self.sub[0] == 'genre'
+            self.sub = None
+            self.apply_view()
+            if back_to_genres:
+                self['list'].moveToIndex(self.genre_back_index)
+                self.selection_changed()
+            return
+        if self.tab != 'top':
+            self.set_tab('top')
+            return
+        self.alive = False
+        self.logo_timer.stop()
+        NowPlaying.stop(self.session)
         self.close()
 
-    def stop(self, text=""):
-        if self.is_playing:
-            self.timer.stop()
-            try:
-                self["back"].instance.hide()
-                self.is_playing = False
-                self.session.nav.stopService()
-                self.session.nav.playService(self.srefOld)
-                self.cover_timer.stop()
-            except TypeError:
-                self.cover_timer.stop()
-                self.close()
-            aspect_manager.restore_aspect()
+    # -------------------------------------------------------------- updates
+    def _update_checked(self, info):
+        if not self.alive or not info:
+            return
+        self.update_info = info
+        if not updater.is_newer(info['version']):
+            return
+        if settings.data.get('update_mode') == 'auto':
+            start_update(self.session, info, self['status'].setText)
+            return
+        self['status'].setText(_('Update %s available: MENU to install') % info['version'])
+        self.session.openWithCallback(
+            lambda yes: yes and start_update(self.session, info, self['status'].setText),
+            MessageBox,
+            _('RadioM %s is available on GitHub.\n\n%s\n\nInstall it now?') % (info['version'], info['changelog']),
+            MessageBox.TYPE_YESNO, timeout=20, default=False)
 
 
-class Playstream2(
-        Screen,
-        InfoBarMenu,
-        InfoBarBase,
-        InfoBarSeek,
-        InfoBarNotifications,
-        InfoBarShowHide):
+# --------------------------------------------------------------------------
+#  About / updates / donations
+# --------------------------------------------------------------------------
+
+class RadioMAbout(Screen):
+
+    def __init__(self, session, update_info=None):
+        self.skin = load_skin('radiom_about.xml')
+        Screen.__init__(self, session)
+        self.setTitle(_('About RadioM'))
+        self.info = update_info
+        self.alive = True
+        self['version'] = Label(_('Version %s') % __version__)
+        self['latest'] = Label('')
+        self['credits'] = Label(
+            _('Created by Lululla') + '\n' +
+            _('Stations and data: laut.fm (User Generated Radio)') + '\n' +
+            _('Cover art: iTunes Search API') + '\n' +
+            _('License: GNU GPL v2'))
+        self['features'] = Label(
+            _('Thousands of web radios sorted by live listeners, favourites, '
+              'online search, genres, stations near you, cover art, '
+              'recently played songs and sleep timer.'))
+        self['repo'] = Label('github.com/' + updater.GITHUB_REPO)
+        self['updmode'] = Label('')
+        self['donate'] = Label(_('Do you like RadioM? Offer a coffee to the developer!'))
+        self['keys_hint'] = Label(_('Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  \u00b7  0: this screen'))
+        self['scan'] = Label(_('Scan the code with your phone camera'))
+        self['thanks'] = Label('\u2665  ' + _('Thank you!'))
+        self['qr1_label'] = Label('PayPal')
+        self['qr2_label'] = Label('Ko-fi')
+        self['key_red'] = Label(_('Close'))
+        self['key_green'] = Label(_('Check update'))
+        self['key_yellow'] = Label(_('Update mode'))
+        self['key_blue'] = Label(_('Changelog'))
+        self['actions'] = ActionMap(
+            ['OkCancelActions', 'ColorActions'],
+            {'cancel': self.close_screen, 'red': self.close_screen, 'ok': self.close_screen,
+             'green': self.check, 'yellow': self.cycle_mode, 'blue': self.changelog}, -1)
+        self.onLayoutFinish.append(self.start)
+
+    def start(self):
+        self.show_mode()
+        if self.info:
+            self.show_info()
+        else:
+            self.check()
+
+    def show_mode(self):
+        self['updmode'].setText(_('Automatic updates: %s') % dict(UPDATE_MODES).get(
+            settings.data.get('update_mode', 'notify')))
+
+    def show_info(self):
+        info = self.info
+        if not info:
+            self['latest'].setText(_('GitHub not reachable'))
+            return
+        when = (' (%s)' % info['date']) if info.get('date') else ''
+        if updater.is_newer(info['version']):
+            self['latest'].setText(_('New version %s available%s: press GREEN') % (info['version'], when))
+            self['key_green'].setText(_('Install %s') % info['version'])
+        else:
+            self['latest'].setText(_('Up to date: latest release is %s%s') % (info['version'], when))
+            self['key_green'].setText(_('Check update'))
+
+    def check(self):
+        if self.info and updater.is_newer(self.info['version']):
+            start_update(self.session, self.info, self['latest'].setText)
+            return
+        self['latest'].setText(_('Checking GitHub...'))
+
+        def done(info):
+            if self.alive:
+                self.info = info
+                self.show_info()
+        threads.deferToThread(updater.check_latest).addCallback(done)
+
+    def cycle_mode(self):
+        keys = [m[0] for m in UPDATE_MODES]
+        cur = settings.data.get('update_mode', 'notify')
+        settings.data['update_mode'] = keys[(keys.index(cur) + 1) % len(keys)] if cur in keys else 'notify'
+        settings.save()
+        self.show_mode()
+
+    def changelog(self):
+        if self.info and self.info.get('changelog'):
+            self.session.open(MessageBox, _('RadioM %s\n\n%s') % (self.info['version'], self.info['changelog']),
+                              MessageBox.TYPE_INFO)
+
+    def close_screen(self):
+        self.alive = False
+        self.close()
+
+
+# --------------------------------------------------------------------------
+#  Now playing screen
+# --------------------------------------------------------------------------
+
+class RadioMPlayer(Screen):
+
+    def __init__(self, session, stations, index):
+        self.skin = load_skin('radiom80.xml')
+        Screen.__init__(self, session)
+        self.setTitle('RadioM')
+        self.stations = stations
+        self.index = index
+        self.rec = stations[index]
+        self.alive = True
+        self.fetching = False
+        self.song_key = ''
+        self.song_start = 0
+        self.song_len = 0
+        self.next_refresh = 0
+        self.station_logo = None
+
+        self['backdrop'] = Pixmap()
+        self['cover'] = Pixmap()
+        self['stlogo'] = Pixmap()
+        self['station'] = Label('')
+        self['station_info'] = Label('')
+        self['label_now'] = Label(_('NOW PLAYING'))
+        self['title'] = Label('')
+        self['artist'] = Label('')
+        self['album'] = Label('')
+        self['progress'] = ProgressBar()
+        self['elapsed'] = Label('')
+        self['duration'] = Label('')
+        self['label_history'] = Label(_('RECENTLY PLAYED'))
+        self['history'] = Label('')
+        self['coming'] = Label('')
+        self['listeners'] = Label('')
+        self['state'] = Label('')
+        self['key_red'] = Label(_('Back'))
+        self['key_green'] = Label(_('Stop'))
+        self['key_yellow'] = Label(_('Favourite'))
+        self['key_blue'] = Label('')
+        self['key_menu'] = Label(_('Sleep timer'))
+        self['key_lr'] = Label(_('Prev / next station'))
+
+        self.img_backdrop = ImageWidget(self['backdrop'])
+        self.img_cover = ImageWidget(self['cover'])
+        self.img_logo = ImageWidget(self['stlogo'])
+
+        self.tick_timer = make_timer(self.tick)
+        self.events = ServiceEventTracker(screen=self, eventmap={
+            iPlayableService.evUpdatedInfo: self.icy_update,
+        })
+
+        self['actions'] = ActionMap(
+            ['OkCancelActions', 'ColorActions', 'DirectionActions',
+             'MenuActions', 'ChannelSelectBaseActions'],
+            {
+                'ok': self.toggle_play,
+                'green': self.toggle_play,
+                'cancel': self.back,
+                'red': self.back,
+                'yellow': self.toggle_fav,
+                'blue': self.switch_player,
+                'menu': self.sleep_menu,
+                'left': self.prev_station,
+                'right': self.next_station,
+                'prevBouquet': self.prev_station,
+                'nextBouquet': self.next_station,
+                'up': lambda: None,
+                'down': lambda: None,
+            }, -1)
+        self.onLayoutFinish.append(self.start)
+        self.onClose.append(self.cleanup)
+
+    def start(self):
+        self.img_backdrop.show(join(skin_path, 'bg_player.jpg'))
+        self.img_cover.show(DEFAULT_LOGO)
+        self.load_station(autoplay=True)
+        self.tick_timer.start(1000, False)
+
+    # -------------------------------------------------------------- station
+    def load_station(self, autoplay=False):
+        rec = self.rec
+        self.song_key = ''
+        self.song_len = 0
+        self.next_refresh = 0
+        self['station'].setText(rec['title'])
+        info = [x for x in (', '.join(rec.get('genres', [])[:4]), rec.get('location')) if x]
+        self['station_info'].setText('  ·  '.join(info) or rec.get('desc', ''))
+        self['title'].setText(rec['title'])
+        self['artist'].setText(rec.get('format') or _('Live stream'))
+        for k in ('album', 'history', 'coming', 'elapsed', 'duration'):
+            self[k].setText('')
+        self['label_history'].setText('')
+        self['progress'].setValue(0)
+        self['listeners'].setText(
+            _('%d listening') % rec.get('listeners', 0) if rec.get('src') == 'laut' else '')
+        self['key_yellow'].setText(_('Remove fav.') if settings.is_fav(rec) else _('Favourite'))
+        self['key_blue'].setText(dict(PLAYERS).get(settings.data.get('player'), 'GStreamer'))
+        self.station_logo = None
+        if rec.get('logo'):
+            url = rec['logo']
+
+            def logo_done(path):
+                if self.alive and self.rec.get('logo') == url and path:
+                    self.station_logo = path
+                    self.img_logo.show(path)
+                    if not self.song_key:
+                        self.img_cover.show(path)
+            threads.deferToThread(L.download_logo, url).addCallback(logo_done)
+        else:
+            self['stlogo'].hide()
+        if autoplay and not NowPlaying.is_playing(rec):
+            self.play()
+        self.update_state()
+
+    def play(self):
+        try:
+            NowPlaying.play(self.session, self.rec, settings.data.get('player', '4097'))
+        except Exception as e:
+            print('[RadioM] play error: %s' % e)
+            self['state'].setText(_('Playback error'))
+        self.update_state()
+
+    def toggle_play(self):
+        if NowPlaying.is_playing(self.rec):
+            NowPlaying.stop(self.session)
+        else:
+            self.play()
+        self.update_state()
+
+    def update_state(self):
+        playing = NowPlaying.is_playing(self.rec)
+        self['key_green'].setText(_('Stop') if playing else _('Play'))
+        parts = [_('▶ Playing') if playing else _('■ Stopped')]
+        if NowPlaying.sleep_end:
+            parts.append(_('sleep in %d min') % max(1, int((NowPlaying.sleep_end - time()) / 60 + 0.5)))
+        self['state'].setText('   '.join(parts))
+
+    def step(self, delta):
+        if len(self.stations) < 2:
+            return
+        self.index = (self.index + delta) % len(self.stations)
+        self.rec = self.stations[self.index]
+        self.load_station(autoplay=True)
+
+    def prev_station(self):
+        self.step(-1)
+
+    def next_station(self):
+        self.step(1)
+
+    def toggle_fav(self):
+        added = settings.toggle_fav(self.rec)
+        self['key_yellow'].setText(_('Remove fav.') if added else _('Favourite'))
+
+    def switch_player(self):
+        keys = [p[0] for p in PLAYERS if p[0] != 'movie']
+        cur = settings.data.get('player', '4097')
+        nxt = keys[(keys.index(cur) + 1) % len(keys)] if cur in keys else keys[0]
+        settings.data['player'] = nxt
+        settings.save()
+        self['key_blue'].setText(dict(PLAYERS)[nxt])
+        if NowPlaying.is_playing(self.rec):
+            self.play()
+
+    def sleep_menu(self):
+        opts = [(_('Off'), 0)] + [(_('%d minutes') % m, m) for m in (15, 30, 45, 60, 90, 120)]
+        self.session.openWithCallback(self.sleep_done, ChoiceBox, title=_('Sleep timer'), list=opts)
+
+    def sleep_done(self, choice):
+        if choice is not None:
+            NowPlaying.set_sleep(choice[1])
+            self.update_state()
+
+    # ----------------------------------------------------------- song info
+    def tick(self):
+        if not self.alive:
+            return
+        now = time()
+        if self.rec.get('src') == 'laut' and not self.fetching and now >= self.next_refresh:
+            self.fetching = True
+            station_id = self.rec['id']
+            d = threads.deferToThread(L.fetch_song_info, station_id)
+            d.addCallback(self.song_info_done, station_id)
+            d.addBoth(self._fetch_finished)
+        if self.song_len > 0:
+            elapsed = min(self.song_len, max(0, now - self.song_start))
+            self['progress'].setValue(int(elapsed * 100 / self.song_len))
+            self['elapsed'].setText(fmt_time(elapsed))
+            self['duration'].setText('-' + fmt_time(self.song_len - elapsed))
+        if NowPlaying.sleep_end or (not NowPlaying.is_playing(self.rec) and self['key_green'].getText() == _('Stop')):
+            self.update_state()
+
+    def _fetch_finished(self, result):
+        self.fetching = False
+        return None
+
+    def song_info_done(self, info, station_id):
+        if not self.alive or station_id != self.rec.get('id'):
+            return
+        now = time()
+        song = info.get('song') or {}
+        if info.get('listeners') is not None:
+            self['listeners'].setText(_('%d listening') % info['listeners'])
+        if info.get('next'):
+            self['coming'].setText(_('Coming up: %s') % ', '.join(info['next']))
+        if song and song.get('type', 'song') == 'song':
+            artist = (song.get('artist') or {}).get('name', '') or ''
+            title = song.get('title', '') or ''
+            album = song.get('album', '') or ''
+            year = song.get('releaseyear')
+            start = L.parse_laut_time(song.get('started_at', ''))
+            end = L.parse_laut_time(song.get('ends_at', ''))
+            length = song.get('length') or 0
+            if start and end and 20 < end - start < 3600:
+                length = end - start
+            # if the box clock is badly off, fall back to local timing
+            if not start or not (-5 < now - start < (length or 900) + 60):
+                start = None
+            key = artist + '|' + title
+            if key != self.song_key:
+                self.song_key = key
+                self.set_song(artist, title, ('%s (%s)' % (album, year)) if album and year else album)
+                self.song_start = start or now
+            self.song_len = length or 0
+            if end and now < end < now + 1800 and start:
+                self.next_refresh = end + 3
+            else:
+                self.next_refresh = now + 30
+        else:
+            self.next_refresh = now + 30
+        self.show_history(info.get('history') or [], song)
+
+    def set_song(self, artist, title, album=''):
+        self['title'].setText(title or self.rec['title'])
+        self['artist'].setText(artist)
+        self['album'].setText(album or '')
+        key = artist + '|' + title
+
+        def done(result):
+            cover, backdrop = result
+            if self.alive and key == self.song_key:
+                self.img_cover.show(cover or self.station_logo or DEFAULT_LOGO)
+                self.img_backdrop.show(backdrop or join(skin_path, 'bg_player.jpg'))
+        threads.deferToThread(L.fetch_cover, artist, title, self.rec.get('logo', '')).addCallback(done)
+
+    def show_history(self, history, current):
+        lines = []
+        cur_id = (current or {}).get('id')
+        for s in history:
+            if cur_id and s.get('id') == cur_id:
+                continue
+            artist = (s.get('artist') or {}).get('name', '')
+            title = s.get('title', '')
+            if not title:
+                continue
+            ts = L.parse_laut_time(s.get('started_at', ''))
+            hhmm = strftime('%H:%M', localtime(ts)) if ts else '     '
+            lines.append('%s   %s – %s' % (hhmm, artist, title))
+            if len(lines) >= 5:
+                break
+        self['history'].setText('\n'.join(lines))
+        self['label_history'].setText(_('RECENTLY PLAYED') if lines else '')
+
+    def icy_update(self):
+        """Stream title tag (works for any Shoutcast/Icecast stream)."""
+        if self.rec.get('src') == 'laut' and self.song_key:
+            return
+        try:
+            service = self.session.nav.getCurrentService()
+            info = service and service.info()
+            tag = info.getInfoString(iServiceInformation.sTagTitle) if info else ''
+        except Exception:
+            tag = ''
+        if not tag:
+            return
+        if ' - ' in tag:
+            artist, title = tag.split(' - ', 1)
+        else:
+            artist, title = '', tag
+        key = artist + '|' + title
+        if key != self.song_key:
+            self.song_key = key
+            self.song_len = 0
+            self['progress'].setValue(0)
+            self['elapsed'].setText('')
+            self['duration'].setText('')
+            self.set_song(artist.strip(), title.strip())
+
+    # ---------------------------------------------------------------- exit
+    def back(self):
+        self.close(self.index)
+
+    def cleanup(self):
+        self.alive = False
+        self.tick_timer.stop()
+
+
+# --------------------------------------------------------------------------
+#  Fallback full-screen player (MoviePlayer skin)
+# --------------------------------------------------------------------------
+
+class Playstream2(Screen, InfoBarMenu, InfoBarBase, InfoBarSeek,
+                  InfoBarNotifications, InfoBarShowHide):
     STATE_PLAYING = 1
     STATE_PAUSED = 2
 
     def __init__(self, session, name, url):
         Screen.__init__(self, session)
         self.skinName = 'MoviePlayer'
-        self.sref = None
         InfoBarMenu.__init__(self)
         InfoBarNotifications.__init__(self)
         InfoBarBase.__init__(self)
         InfoBarShowHide.__init__(self)
-        try:
-            self.init_aspect = int(self.getAspect())
-        except BaseException:
-            self.init_aspect = 0
-        self.new_aspect = self.init_aspect
         self['actions'] = ActionMap(
-            [
-                'WizardActions',
-                'MoviePlayerActions',
-                'EPGSelectActions',
-                'MediaPlayerSeekActions',
-                'ColorActions',
-                'InfobarShowHideActions',
-                'InfobarSeekActions',
-                'InfobarActions'
-            ],
+            ['WizardActions', 'MoviePlayerActions', 'EPGSelectActions',
+             'MediaPlayerSeekActions', 'ColorActions',
+             'InfobarShowHideActions', 'InfobarSeekActions', 'InfobarActions'],
             {
                 'leavePlayer': self.stop,
                 'back': self.stop,
                 'playpauseService': self.playpauseService,
-            },
-            -1
-        )
+            }, -1)
         self.allowPiP = False
         self.is_playing = False
         InfoBarSeek.__init__(self, actionmap='MediaPlayerSeekActions')
-        self.icount = 0
         self.name = name
         self.url = url
         self.state = self.STATE_PLAYING
         self.srefOld = self.session.nav.getCurrentlyPlayingServiceReference()
         self.onLayoutFinish.append(self.openPlay)
-        return
-
-    def __onStop(self):
-        self.stop()
 
     def openPlay(self):
-        if self.is_playing:
-            self.stop()
         try:
             url = self.url.replace(':', '%3a').replace(' ', '%20')
-            ref = '4097:0:2:0:0:0:0:0:0:0:' + str(url)  # radio
-            print('final reference:   ' + ref)
-            sref = eServiceReference(ref)
+            sref = eServiceReference('4097:0:2:0:0:0:0:0:0:0:' + url)
             sref.setName(self.name)
             self.session.nav.stopService()
             self.session.nav.playService(sref)
             self.is_playing = True
         except Exception as e:
-            print("Error openPlay: " + str(e))
+            print('[RadioM] openPlay error: %s' % e)
 
     def stop(self, text=''):
-        if self.is_playing:
-            try:
-                self.is_playing = False
-                self.session.nav.stopService()
+        try:
+            self.is_playing = False
+            self.session.nav.stopService()
+            if self.srefOld:
                 self.session.nav.playService(self.srefOld)
-                self.exit()
-            except TypeError as e:
-                print(str(e))
-                self.exit()
-
-    def exit(self):
-        aspect_manager.restore_aspect
+        except Exception as e:
+            print('[RadioM] stop error: %s' % e)
+        Utils.aspect_manager.restore_aspect()
         self.close()
 
     def playpauseService(self):
         if self.state == self.STATE_PLAYING:
-            self.pause()
+            self.session.nav.pause(True)
             self.state = self.STATE_PAUSED
-        elif self.state == self.STATE_PAUSED:
-            self.unpause()
+        else:
+            self.session.nav.pause(False)
             self.state = self.STATE_PLAYING
 
-    def pause(self):
-        self.session.nav.pause(True)
 
-    def unpause(self):
-        self.session.nav.pause(False)
-
-    def keyLeft(self):
-        self['text'].left()
-
-    def keyRight(self):
-        self['text'].right()
-
-    def keyNumberGlobal(self, number):
-        self['text'].number(number)
+# backwards compatible names (other plugins/skins may reference them)
+radiom1 = RadioMMain
+radiom80 = RadioMPlayer
 
 
 def main(session, **kwargs):
-    global _session
-    _session = session
-    session.open(radiom1)
+    session.open(RadioMMain)
 
 
 def Plugins(**kwargs):
     return PluginDescriptor(
-        name="RadioM",
-        description="RadioM from around the world V. " + __version__,
-        where=PluginDescriptor.WHERE_PLUGINMENU,
-        icon="plugin.png",
-        fnc=main
+        name='RadioM',
+        description=_('Thousands of web radios, favourites, covers') + ' V.' + __version__,
+        where=[PluginDescriptor.WHERE_PLUGINMENU, PluginDescriptor.WHERE_EXTENSIONSMENU],
+        icon='plugin.png',
+        fnc=main,
     )
