@@ -4,191 +4,269 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
-msgid ""
-msgstr ""
-"Project-Id-Version: RadioM\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
 
-msgid "Ask before installing"
+msgid "%d listening"
 msgstr ""
 
-msgid "Install automatically"
+msgid "%d listening now"
 msgstr ""
 
-msgid "Never check"
+msgid "%d minutes"
 msgstr ""
 
-msgid "Top"
-msgstr ""
-
-msgid "Favourites"
-msgstr ""
-
-msgid "Recent"
-msgstr ""
-
-msgid "Near you"
-msgstr ""
-
-msgid "Genres"
-msgstr ""
-
-msgid "Search"
-msgstr ""
-
-msgid "listeners"
-msgstr ""
-
-msgid "Top genre on laut.fm"
-msgstr ""
-
-msgid "stations"
-msgstr ""
-
-#, python-format
-msgid "Downloading RadioM %s from GitHub..."
-msgstr ""
-
-#, python-format
-msgid "RadioM %s installed"
-msgstr ""
-
-#, python-format
-msgid ""
-"RadioM %s has been installed.\n"
-"\n"
-"Restart the GUI now to use it?"
-msgstr ""
-
-msgid "Update failed"
-msgstr ""
-
-#, python-format
-msgid ""
-"Update failed:\n"
-"%s"
-msgstr ""
-
-msgid "Loading stations..."
-msgstr ""
-
-msgid "Exit"
-msgstr ""
-
-msgid "Play"
-msgstr ""
-
-msgid "Favourite"
-msgstr ""
-
-msgid "Next section"
-msgstr ""
-
-msgid "Menu"
+msgid "%d stations in the list"
 msgstr ""
 
 msgid "About"
 msgstr ""
 
-msgid "Downloading station list..."
+msgid "About RadioM"
 msgstr ""
 
-#, python-format
-msgid "Loading stations... %d"
+msgid "About, updates and donations"
 msgstr ""
 
-#, python-format
-msgid "No stations (%s). Details in %s"
-msgstr ""
-
-#, python-format
-msgid "Network error (%s). Details in %s"
-msgstr ""
-
-#, python-format
-msgid "e.g. %s"
-msgstr ""
-
-#, python-format
-msgid "Genre: %s"
-msgstr ""
-
-#, python-format
-msgid "Search: \"%s\""
-msgstr ""
-
-#, python-format
-msgid "Playlist: %s"
-msgstr ""
-
-msgid "Nothing found"
-msgstr ""
-
-msgid "Your favourites"
-msgstr ""
-
-msgid "No favourites yet: press YELLOW on a station"
-msgstr ""
-
-msgid "Recently played stations"
-msgstr ""
-
-msgid "Nothing played yet"
-msgstr ""
-
-#, python-format
-msgid "Near %s"
-msgstr ""
-
-msgid "Stations near you"
-msgstr ""
-
-msgid "Finding your position..."
-msgstr ""
-
-msgid "No stations with a position near you"
+msgid "Added to favourites"
 msgstr ""
 
 msgid "All genres"
 msgstr ""
 
-msgid "Press OK to search stations, artists, genres, cities"
+msgid "Ask before installing"
 msgstr ""
 
-msgid "Top stations"
+msgid "Automatic updates: %s"
 msgstr ""
 
-msgid "Top genre"
+msgid "Back"
 msgstr ""
 
-msgid "Genre"
+msgid "Cancel"
 msgstr ""
 
-#, python-format
-msgid "%d stations in the list"
+msgid "Cancel execution?"
 msgstr ""
 
-msgid ""
-"Press OK to see all the stations of this genre, also the ones not in the top"
-" list."
+msgid "Changelog"
 msgstr ""
 
-msgid "Open"
+msgid "Check update"
 msgstr ""
 
-#, python-format
-msgid "%d listening now"
+msgid "Checking GitHub..."
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Coming up: %s"
+msgstr ""
+
+msgid "Console"
+msgstr ""
+
+msgid "Cover art: iTunes Search API"
+msgstr ""
+
+msgid "Created by Lululla"
 msgstr ""
 
 msgid "Custom stream"
 msgstr ""
 
-msgid "Remove fav."
+msgid "DJ"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Do you like RadioM? Offer a coffee to the developer!"
+msgstr ""
+
+msgid "Downloading RadioM %s from GitHub..."
+msgstr ""
+
+msgid "Downloading station list..."
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Favourite"
+msgstr ""
+
+msgid "Favourites"
+msgstr ""
+
+msgid "Finding your position..."
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgid "Genre"
+msgstr ""
+
+msgid "Genre: %s"
+msgstr ""
+
+msgid "Genres"
+msgstr ""
+
+msgid "GitHub not reachable"
+msgstr ""
+
+msgid "Hide/Show"
+msgstr ""
+
+msgid "Install %s"
+msgstr ""
+
+msgid "Install automatically"
+msgstr ""
+
+msgid "Install update %s"
+msgstr ""
+
+msgid "Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  ·  0: this screen"
+msgstr ""
+
+msgid "License: GNU GPL v2"
+msgstr ""
+
+msgid "Listeners now"
+msgstr ""
+
+msgid "Live stream"
 msgstr ""
 
 msgid "Loading more stations from laut.fm..."
+msgstr ""
+
+msgid "Loading stations..."
+msgstr ""
+
+msgid "Loading stations... %d"
+msgstr ""
+
+msgid "Local playlists"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+msgid "NOW PLAYING"
+msgstr ""
+
+msgid "Near %s"
+msgstr ""
+
+msgid "Near you"
+msgstr ""
+
+msgid "Network error (%s). Details in %s"
+msgstr ""
+
+msgid "Never check"
+msgstr ""
+
+msgid "New version %s available%s: press GREEN"
+msgstr ""
+
+msgid "Next section"
+msgstr ""
+
+msgid "No .txt playlist in %s"
+msgstr ""
+
+msgid "No favourites yet: press YELLOW on a station"
+msgstr ""
+
+msgid "No stations (%s). Details in %s"
+msgstr ""
+
+msgid "No stations with a position near you"
+msgstr ""
+
+msgid "Nothing found"
+msgstr ""
+
+msgid "Nothing played yet"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Online search not available, local results only"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Page"
+msgstr ""
+
+msgid "Play"
+msgstr ""
+
+msgid "Playback error"
+msgstr ""
+
+msgid "Player: %s"
+msgstr ""
+
+msgid "Playlist: %s"
+msgstr ""
+
+msgid "Position not available"
+msgstr ""
+
+msgid "Press OK to search stations, artists, genres, cities"
+msgstr ""
+
+msgid "Press OK to see all the stations of this genre, also the ones not in the top list."
+msgstr ""
+
+msgid "Prev / next station"
+msgstr ""
+
+msgid "RECENTLY PLAYED"
+msgstr ""
+
+msgid "RadioM %s installed"
+msgstr ""
+
+msgid "RadioM menu"
+msgstr ""
+
+msgid "Recent"
+msgstr ""
+
+msgid "Recently played stations"
+msgstr ""
+
+msgid "Reload station list"
+msgstr ""
+
+msgid "Remove fav."
+msgstr ""
+
+msgid "Removed from favourites"
+msgstr ""
+
+msgid "Restart"
+msgstr ""
+
+msgid "Scan the code with your phone camera"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search: \\"
 msgstr ""
 
 msgid "Search: station, artist, genre, city..."
@@ -197,230 +275,80 @@ msgstr ""
 msgid "Searching on laut.fm..."
 msgstr ""
 
-msgid "Online search not available, local results only"
-msgstr ""
-
-msgid "Position not available"
-msgstr ""
-
-msgid "Added to favourites"
-msgstr ""
-
-msgid "Removed from favourites"
-msgstr ""
-
-msgid "Format"
-msgstr ""
-
-msgid "Description"
-msgstr ""
-
-msgid "Location"
-msgstr ""
-
-msgid "DJ"
-msgstr ""
-
-msgid "Listeners now"
-msgstr ""
-
-msgid "Page"
-msgstr ""
-
-msgid "Stream"
-msgstr ""
-
-msgid "Local playlists"
-msgstr ""
-
-msgid "Update my position (Near you)"
-msgstr ""
-
-#, python-format
-msgid "Player: %s"
-msgstr ""
-
-msgid "Reload station list"
-msgstr ""
-
-msgid "About, updates and donations"
-msgstr ""
-
-msgid "Stop playback"
-msgstr ""
-
-#, python-format
-msgid "Install update %s"
-msgstr ""
-
-msgid "RadioM menu"
-msgstr ""
-
-#, python-format
-msgid "No .txt playlist in %s"
-msgstr ""
-
-#, python-format
-msgid "Update %s available: MENU to install"
-msgstr ""
-
-#, python-format
-msgid ""
-"RadioM %s is available on GitHub.\n"
-"\n"
-"%s\n"
-"\n"
-"Install it now?"
-msgstr ""
-
-msgid "About RadioM"
-msgstr ""
-
-#, python-format
-msgid "Version %s"
-msgstr ""
-
-msgid "Created by Lululla"
+msgid "Sleep timer"
 msgstr ""
 
 msgid "Stations and data: laut.fm (User Generated Radio)"
 msgstr ""
 
-msgid "Cover art: iTunes Search API"
-msgstr ""
-
-msgid "License: GNU GPL v2"
-msgstr ""
-
-msgid ""
-"Thousands of web radios sorted by live listeners, favourites, online search,"
-" genres, stations near you, cover art, recently played songs and sleep "
-"timer."
-msgstr ""
-
-msgid "Do you like RadioM? Offer a coffee to the developer!"
-msgstr ""
-
-msgid ""
-"Keys 1-6: Top, Favourites, Recent, Near you, Genres, Search  ·  0: this "
-"screen"
-msgstr ""
-
-msgid "Scan the code with your phone camera"
-msgstr ""
-
-msgid "Thank you!"
-msgstr ""
-
-msgid "Close"
-msgstr ""
-
-msgid "Check update"
-msgstr ""
-
-msgid "Update mode"
-msgstr ""
-
-msgid "Changelog"
-msgstr ""
-
-#, python-format
-msgid "Automatic updates: %s"
-msgstr ""
-
-msgid "GitHub not reachable"
-msgstr ""
-
-#, python-format
-msgid "New version %s available%s: press GREEN"
-msgstr ""
-
-#, python-format
-msgid "Install %s"
-msgstr ""
-
-#, python-format
-msgid "Up to date: latest release is %s%s"
-msgstr ""
-
-msgid "Checking GitHub..."
-msgstr ""
-
-#, python-format
-msgid ""
-"RadioM %s\n"
-"\n"
-"%s"
-msgstr ""
-
-msgid "NOW PLAYING"
-msgstr ""
-
-msgid "RECENTLY PLAYED"
-msgstr ""
-
-msgid "Back"
+msgid "Stations near you"
 msgstr ""
 
 msgid "Stop"
 msgstr ""
 
-msgid "Sleep timer"
+msgid "Stop playback"
 msgstr ""
 
-msgid "Prev / next station"
+msgid "Stream"
 msgstr ""
 
-msgid "Live stream"
+msgid "Thank you!"
 msgstr ""
 
-#, python-format
-msgid "%d listening"
-msgstr ""
-
-msgid "Playback error"
-msgstr ""
-
-msgid "▶ Playing"
-msgstr ""
-
-msgid "■ Stopped"
-msgstr ""
-
-#, python-format
-msgid "sleep in %d min"
-msgstr ""
-
-msgid "Off"
-msgstr ""
-
-#, python-format
-msgid "%d minutes"
-msgstr ""
-
-#, python-format
-msgid "Coming up: %s"
+msgid "Thousands of web radios sorted by live listeners, favourites, online search, genres, stations near you, cover art, recently played songs and sleep timer."
 msgstr ""
 
 msgid "Thousands of web radios, favourites, covers"
 msgstr ""
 
-msgid "Cancel"
+msgid "Top"
 msgstr ""
 
-msgid "Hide/Show"
+msgid "Top genre"
 msgstr ""
 
-msgid "Restart"
+msgid "Top genre on laut.fm"
 msgstr ""
 
-msgid "Console"
+msgid "Top stations"
 msgstr ""
 
-msgid ""
-"Execution progress\n"
-"\n"
+msgid "Up to date: latest release is %s%s"
 msgstr ""
 
-msgid "Cancel execution?"
+msgid "Update %s available: MENU to install"
+msgstr ""
+
+msgid "Update failed"
+msgstr ""
+
+msgid "Update mode"
+msgstr ""
+
+msgid "Update my position (Near you)"
+msgstr ""
+
+msgid "Version %s"
+msgstr ""
+
+msgid "Your favourites"
+msgstr ""
+
+msgid "e.g. %s"
+msgstr ""
+
+msgid "listeners"
+msgstr ""
+
+msgid "sleep in %d min"
+msgstr ""
+
+msgid "stations"
+msgstr ""
+
+msgid "■ Stopped"
+msgstr ""
+
+msgid "▶ Playing"
 msgstr ""
